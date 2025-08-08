@@ -1,10 +1,12 @@
 import { Hono } from 'hono'
-import { serveStatic } from 'hono/cloudflare-workers'  // Hono 公式の静的配信
+import { z } from 'zod'
+import { zValidator } from '@hono/zod-validator'
+import { getAssetFromKV, NotFoundError } from '@cloudflare/kv-asset-handler'
 
 
 type Bindings = { DB: D1Database }
 
-const app = new Hono<{ Bindings: Env }>()
+const app = new Hono<{ Bindings: Bindings }>()
 
 /* ---------- 1. 一般ユーザー：投書送信 ---------- */
 app.post(
