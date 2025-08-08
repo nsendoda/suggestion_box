@@ -1,6 +1,8 @@
 import { Hono } from 'hono'
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
+import { getAssetFromKV, NotFoundError } from '@cloudflare/kv-asset-handler'
+
 
 type Bindings = { DB: D1Database }
 
@@ -101,7 +103,14 @@ app.post(
 
 /* ---------- 5. 静的ファイル (フォーム等) ---------- */
 app.get('*', async (c) => {
-  return c.env.ASSETS.fetch(c.req.raw) // Wrangler の site.bucket を利用
+  try {
+    return await getAssetFromKV(c, {
+      ASSET_NAMESPACE: c.env.__STATIC_CONTENT,
+      ASSET_MANIFEST: JSON.parse(c.env.__STATIC_CONTENT_MANIFEST)
+    })
+  } catch (e) {
+    if (e instanceof NotFoundError) return c.text('Not Found', 404)
+    console.error(e)
+    return c.text('Internal Server Error', 500)
+  }
 })
-
-export default app
