@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import { serveStatic } from 'hono/cloudflare-workers/serve-static' // ← 修正
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import { getAssetFromKV, NotFoundError } from '@cloudflare/kv-asset-handler'
