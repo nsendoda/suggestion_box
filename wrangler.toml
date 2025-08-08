@@ -5,7 +5,7 @@ main = "src/worker.ts"
 [[d1_databases]]
 binding = "DB"
 database_name = "to-sho-box-db"
-database_id = "<自動作成されるので空でも可>"
+database_id = ""
 
 [site]
 bucket = "./public"

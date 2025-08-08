@@ -1,0 +1,1 @@
+{ "scripts": { "postbuild": "wrangler d1 migrations apply DB --remote" } }
