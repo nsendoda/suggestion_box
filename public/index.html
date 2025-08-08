@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<title>投書する</title>
+<form id="f">
+  <textarea name="content" maxlength="200" required></textarea><br />
+  <button>送信</button>
+</form>
+<script>
+  const ownerId = "owner1"; // 固定でもクエリでも OK
+  document.getElementById("f").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const content = new FormData(e.target).get("content");
+    await fetch(`/api/owners/${ownerId}/letters`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+    });
+    alert("送信しました！");
+    e.target.reset();
+  });
+</script>

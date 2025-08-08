@@ -1,0 +1,26 @@
+# .github/workflows/deploy.yml
+name: Deploy Worker
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # 必要ならビルド（pnpm build 等）
+
+      # Wrangler 公式アクションでデプロイ
+      - name: Deploy to Cloudflare
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # デプロイ後に D1 マイグレーションを実行
+          postCommands: |
+            wrangler d1 migrations apply to-sho-box-db --remote

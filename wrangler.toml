@@ -1,0 +1,11 @@
+name = "to-sho-box"
+compatibility_date = "2025-08-08"
+main = "src/worker.ts"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "to-sho-box-db"
+database_id = "<自動作成されるので空でも可>"
+
+[site]
+bucket = "./public"

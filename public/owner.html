@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<title>オーナーダッシュボード</title>
+<button id="draw">ランダムに引く</button>
+<ul id="list"></ul>
+
+<script>
+  const ownerId = "owner1";
+
+  async function refresh() {
+    const list = document.getElementById("list");
+    list.innerHTML = "";
+    const data = await fetch(`/api/owners/${ownerId}/letters`).then((r) => r.json());
+    data.forEach((l) => {
+      const li = document.createElement("li");
+      li.textContent = `[${l.status}] ${l.content}`;
+      if (l.status === "保持") {
+        li.innerHTML +=
+          ` <button onclick="update(${l.id},'完了')">完了</button>` +
+          ` <button onclick="update(${l.id},'棄却')">棄却</button>`;
+      }
+      list.appendChild(li);
+    });
+  }
+
+  async function update(id, status) {
+    await fetch(`/api/owners/${ownerId}/letters/${id}/status`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    refresh();
+  }
+
+  document.getElementById("draw").onclick = async () => {
+    const res = await fetch(`/api/owners/${ownerId}/draw`, { method: "POST" });
+    if (res.ok) alert("保持しました: " + (await res.json()).content);
+    else alert((await res.json()).error);
+    refresh();
+  };
+
+  refresh();
+</script>
