@@ -1,6 +1,5 @@
 name = "to-sho-box"
 compatibility_date = "2025-08-08"
-main = "src/worker.ts"
 
 [[d1_databases]]
 binding = "DB"

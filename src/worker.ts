@@ -1,12 +1,10 @@
 import { Hono } from 'hono'
-import { z } from 'zod'
-import { zValidator } from '@hono/zod-validator'
-import { getAssetFromKV, NotFoundError } from '@cloudflare/kv-asset-handler'
+import { serveStatic } from 'hono/cloudflare-workers'  // Hono 公式の静的配信
 
 
 type Bindings = { DB: D1Database }
 
-const app = new Hono<{ Bindings: Bindings }>()
+const app = new Hono<{ Bindings: Env }>()
 
 /* ---------- 1. 一般ユーザー：投書送信 ---------- */
 app.post(
@@ -101,16 +99,11 @@ app.post(
   }
 )
 
-/* ---------- 5. 静的ファイル (フォーム等) ---------- */
-app.get('*', async (c) => {
-  try {
-    return await getAssetFromKV(c, {
-      ASSET_NAMESPACE: c.env.__STATIC_CONTENT,
-      ASSET_MANIFEST: JSON.parse(c.env.__STATIC_CONTENT_MANIFEST)
-    })
-  } catch (e) {
-    if (e instanceof NotFoundError) return c.text('Not Found', 404)
-    console.error(e)
-    return c.text('Internal Server Error', 500)
-  }
-})
+/* ---------- 静的ファイル (public/**) ---------- */
+app.use('*', serveStatic({ root: './public' }))
+
+/* ---------- ESM 形式のエクスポート ---------- */
+export default {
+  fetch: (req: Request, env: Env, ctx: ExecutionContext) =>
+    app.fetch(req, env, ctx),
+}
