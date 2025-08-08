@@ -1,1 +1,22 @@
-{ "scripts": { "postbuild": "wrangler d1 migrations apply DB --remote" } }
+{
+    "name": "my-worker",
+    "version": "1.0.0",
+    "type": "module",
+    "packageManager": "bun@1.2.15",
+    "scripts": {
+      "dev": "wrangler dev",
+      "deploy": "wrangler deploy",
+      "postbuild": "wrangler d1 migrations apply DB --remote"
+    },
+    "dependencies": {
+      "hono": "^4.3.1",
+      "@hono/zod-validator": "^0.6.0",
+      "zod": "^3.23.0"
+    },
+    "devDependencies": {
+      "wrangler": "^4.28.1",
+      "@cloudflare/workers-types": "^4.20240404.0",
+      "typescript": "^5.4.0"
+    }
+  }
+  
