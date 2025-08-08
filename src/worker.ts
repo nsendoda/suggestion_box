@@ -76,7 +76,7 @@ app.get('/api/owners/:ownerId/letters', async (c) => {
     .bind(ownerId)
     .all()
 
-  return c.json(rows)
+  return c.json(rows.results)
 })
 
 /* ---------- 4. オーナー：ステータス更新 (完了／棄却) ---------- */
@@ -103,7 +103,11 @@ app.post(
 )
 
 /* ---------- 静的ファイル (public/**) ---------- */
-app.use('*', serveStatic({ root: './public' }))
+app.use('*', (c, next) => {
+  return c.env.__STATIC_CONTENT_MANIFEST
+    ? serveStatic({ root: './public' })(c, next) // dev 本番とも OK
+    : next();                                    // dev 起動直後は次のルートへ
+});
 
 /* ---------- ESM 形式のエクスポート ---------- */
 export default {

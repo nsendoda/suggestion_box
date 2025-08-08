@@ -1,21 +1,43 @@
+<!-- index.html -->
 <!DOCTYPE html>
-<meta charset="utf-8" />
-<title>投書する</title>
-<form id="f">
-  <textarea name="content" maxlength="200" required></textarea><br />
-  <button>送信</button>
-</form>
-<script>
-  const ownerId = "owner1";
-  document.getElementById("f").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const content = new FormData(e.target).get("content");
-    await fetch(`/api/owners/${ownerId}/letters`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content }),
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <title>お題箱 – 投書する</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body{font-family:"Yu Gothic",sans-serif;background:#fafafa;margin:0;display:flex;flex-direction:column;align-items:center;min-height:100vh;color:#333}
+    header{padding:2rem 1rem;text-align:center}
+    h1{font-size:1.8rem;margin:0 0 .5rem;color:#4a4a4a}
+    textarea{width:90vw;max-width:580px;height:6rem;padding:.75rem;border:1px solid #ddd;border-radius:.75rem;font-size:1rem;resize:none;background:#fff}
+    button{margin-top:1rem;padding:.6rem 2.5rem;font-size:1rem;border:none;border-radius:9999px;background:#ff8d8d;color:#fff;font-weight:bold;cursor:pointer;box-shadow:0 3px 6px rgba(0,0,0,.15);transition:background .2s}
+    button:hover{background:#ff7070}
+    nav{margin-top:2rem}
+    a{color:#ff8d8d;text-decoration:none;font-weight:bold}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>お題箱</h1>
+    <p>あなたの想いを 200 文字までで投書しよう。</p>
+  </header>
+  <form id="f">
+    <textarea name="content" maxlength="200" placeholder="ここに入力…" required></textarea><br />
+    <button>投書する</button>
+  </form>
+  <nav>
+    <a href="/owner.html">▶︎ オーナーページ</a>
+  </nav>
+  <script>
+    const ownerId = "owner1";
+    document.getElementById("f").addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const content = new FormData(e.target).get("content");
+      const res = await fetch(`/api/owners/${ownerId}/letters`,{
+        method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({content})});
+      if(res.ok){alert("送信しました！");e.target.reset();}
+      else alert((await res.json()).error||"エラーが発生しました");
     });
-    alert("送信しました！");
-    e.target.reset();
-  });
-</script>
+  </script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<!-- owner/list.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <title>お題箱 – 投書一覧</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body{font-family:"Yu Gothic",sans-serif;background:#fafafa;margin:0;padding:1.5rem;color:#333}
+    h1{text-align:center;color:#ff8d8d;margin-bottom:1rem;font-size:1.6rem}
+    ul{list-style:none;padding:0;max-width:700px;margin:0 auto}
+    li{background:#fff;border-left:6px solid #ff8d8d;margin-bottom:1rem;padding:1rem 1.2rem;border-radius:.8rem;box-shadow:0 2px 5px rgba(0,0,0,.08);white-space:pre-wrap}
+    .status-保持{border-left-color:#ffb04c}
+    .status-完了{border-left-color:#4caf50;text-decoration:line-through}
+    .status-棄却{border-left-color:#f44336;opacity:.6}
+    nav{text-align:center;margin-top:1.5rem}
+    a{color:#ff8d8d;text-decoration:none;font-weight:bold}
+  </style>
+</head>
+<body>
+  <h1>投書一覧</h1>
+  <ul id="list"></ul>
+  <nav><a href="/owner.html">◀︎ ダッシュボードへ戻る</a></nav>
+  <script>
+    const ownerId="owner1";
+    async function load(){
+      const data=await fetch(`/api/owners/${ownerId}/letters`).then(r=>r.json());
+      const list=document.getElementById("list");
+      list.innerHTML="";
+      data.forEach(l=>{
+        const li=document.createElement("li");
+        li.className=`status-${l.status}`;
+        li.textContent=`[${l.status}] ${l.content}`;
+        list.appendChild(li);
+      });
+    }
+    load();
+  </script>
+</body>
+</html>
