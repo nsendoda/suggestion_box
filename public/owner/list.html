@@ -8,32 +8,66 @@
   <style>
     body{font-family:"Yu Gothic",sans-serif;background:#fafafa;margin:0;padding:1.5rem;color:#333}
     h1{text-align:center;color:#ff8d8d;margin-bottom:1rem;font-size:1.6rem}
+    .toolbar{max-width:700px;margin:0 auto 1rem;display:flex;justify-content:space-between;align-items:center;font-size:.9rem}
     ul{list-style:none;padding:0;max-width:700px;margin:0 auto}
-    li{background:#fff;border-left:6px solid #ff8d8d;margin-bottom:1rem;padding:1rem 1.2rem;border-radius:.8rem;box-shadow:0 2px 5px rgba(0,0,0,.08);white-space:pre-wrap}
+    li{background:#fff;border-left:6px solid #ff8d8d;margin-bottom:1rem;padding:1rem 1.2rem;border-radius:.8rem;box-shadow:0 2px 5px rgba(0,0,0,.08);white-space:pre-wrap;display:flex;justify-content:space-between;align-items:center;gap:1rem}
     .status-保持{border-left-color:#ffb04c}
-    .status-完了{border-left-color:#4caf50;text-decoration:line-through}
-    .status-棄却{border-left-color:#f44336;opacity:.6}
+    .status-完了{border-left-color:#4caf50;opacity:.6;text-decoration:line-through}
+    .status-棄却{border-left-color:#f44336;opacity:.6;text-decoration:line-through}
+    .badge{font-size:.8rem;color:#999;margin-right:.5rem}
+    .btn{padding:.3rem .9rem;border:none;border-radius:6px;font-size:.8rem;font-weight:bold;color:#fff;cursor:pointer}
+    .btn-done{background:#4caf50}
+    .btn-reject{background:#f44336}
     nav{text-align:center;margin-top:1.5rem}
     a{color:#ff8d8d;text-decoration:none;font-weight:bold}
   </style>
 </head>
 <body>
   <h1>投書一覧</h1>
+  <div class="toolbar">
+    <label><input type="checkbox" id="chkInbox"> inbox も表示</label>
+    <a href="/owner.html" style="color:#ff8d8d;font-weight:bold">◀︎ ダッシュボードへ戻る</a>
+  </div>
   <ul id="list"></ul>
-  <nav><a href="/owner.html">◀︎ ダッシュボードへ戻る</a></nav>
+
   <script>
     const ownerId="owner1";
+    const listEl=document.getElementById("list");
+    const chkInbox=document.getElementById("chkInbox");
+
     async function load(){
-      const data=await fetch(`/api/owners/${ownerId}/letters`).then(r=>r.json());
-      const list=document.getElementById("list");
-      list.innerHTML="";
+      const qs=chkInbox.checked?"?all=1":"";
+      const raw=await fetch(`/api/owners/${ownerId}/letters${qs}`).then(r=>r.json());
+      const data=Array.isArray(raw)?raw:raw.results||[];
+      listEl.innerHTML="";
+      if(data.length===0){listEl.innerHTML='<li style="text-align:center;color:#aaa;">表示する投書がありません</li>';return;}
       data.forEach(l=>{
         const li=document.createElement("li");
         li.className=`status-${l.status}`;
-        li.textContent=`[${l.status}] ${l.content}`;
-        list.appendChild(li);
+        const span=document.createElement("span");
+        span.textContent=`[${l.status}] ${l.content}`;
+        li.appendChild(span);
+        if(l.status==='保持'){
+          const btnDone=document.createElement("button");
+          btnDone.className="btn btn-done";btnDone.textContent="完了";
+          btnDone.onclick=()=>update(l.id,'完了');
+          const btnReject=document.createElement("button");
+          btnReject.className="btn btn-reject";btnReject.textContent="棄却";
+          btnReject.onclick=()=>update(l.id,'棄却');
+          li.appendChild(btnDone);
+          li.appendChild(btnReject);
+        }
+        listEl.appendChild(li);
       });
     }
+
+    async function update(id,status){
+      await fetch(`/api/owners/${ownerId}/letters/${id}/status`,{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
+      load();
+    }
+
+    chkInbox.onchange=load;
     load();
   </script>
 </body>
