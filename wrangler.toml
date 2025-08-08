@@ -6,6 +6,3 @@ compatibility_date = "2025-08-08"
 binding = "DB"
 database_name = "to-sho-box-db"
 database_id = "cb739146-1eb6-46cb-8f1c-963d082b59ba"
-
-[site]
-bucket = "./public"

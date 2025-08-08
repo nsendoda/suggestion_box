@@ -6,7 +6,7 @@
   <button>送信</button>
 </form>
 <script>
-  const ownerId = "owner1"; // 固定でもクエリでも OK
+  const ownerId = "owner1";
   document.getElementById("f").addEventListener("submit", async (e) => {
     e.preventDefault();
     const content = new FormData(e.target).get("content");
