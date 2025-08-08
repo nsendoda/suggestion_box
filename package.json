@@ -4,19 +4,18 @@
     "type": "module",
     "packageManager": "bun@1.2.15",
     "scripts": {
-      "dev": "wrangler dev",
-      "deploy": "wrangler deploy",
-      "postbuild": "wrangler d1 migrations apply DB --remote"
+        "dev": "wrangler dev",
+        "deploy": "wrangler deploy",
+        "postbuild": "wrangler d1 migrations apply DB --remote"
     },
     "dependencies": {
-      "hono": "^4.3.1",
-      "@hono/zod-validator": "^0.6.0",
-      "zod": "^3.23.0"
+        "@hono/zod-validator": "^0.7.2",
+        "hono": "^4.9.0",
+        "zod": "^4.0.15"
     },
     "devDependencies": {
-      "wrangler": "^4.28.1",
-      "@cloudflare/workers-types": "^4.20240404.0",
-      "typescript": "^5.4.0"
+        "@cloudflare/workers-types": "^4.20240404.0",
+        "typescript": "^5.4.0",
+        "wrangler": "^4.28.1"
     }
-  }
-  
+}
