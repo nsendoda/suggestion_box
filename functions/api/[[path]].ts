@@ -1,10 +1,4 @@
-export const onRequest: PagesFunction<{ Bindings: { API: Fetcher } }> = async (ctx) => {
-  // 元のメソッド/ヘッダ/ボディを維持して Worker に転送
-  const url = new URL(ctx.request.url)
-  const forward = new Request(url.pathname + url.search, {
-    method: ctx.request.method,
-    headers: ctx.request.headers,
-    body: ctx.request.body
-  })
-  return ctx.env.API.fetch(forward)
-}
+/// <reference types="@cloudflare/workers-types" />
+import type { PagesFunction, Fetcher } from '@cloudflare/workers-types';
+type Env = { API: Fetcher };
+export const onRequest: PagesFunction<Env> = async (ctx) => ctx.env.API.fetch(ctx.request);
