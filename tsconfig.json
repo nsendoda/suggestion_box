@@ -6,6 +6,8 @@
     "isolatedModules": true,
     "esModuleInterop": true,
     "strict": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "lib": ["es2022", "webworker"],
+    "types": ["@cloudflare/workers-types"]
   }
 }
