@@ -34,7 +34,12 @@
   </nav>
 
   <script>
-    const ownerId="owner1";
+async function getMe(){
+  const r = await fetch('/api/me');
+  if(!r.ok){ location.href='/login.html'; return; }
+  return (await r.json()).ownerId;
+}
+let ownerId = await getMe();
     let currentId=null;
     const card=document.getElementById("card");
     const cardContent=document.getElementById("cardContent");

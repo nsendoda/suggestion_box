@@ -1,0 +1,16 @@
+<input id="id" placeholder="希望ID (英数_-)">
+<input id="pw" type="password" placeholder="パスワード (6文字以上)">
+<button id="go">作成</button>
+<script>
+go.onclick = async () => {
+  const res = await fetch('/api/signup', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ ownerId: id.value.trim(), password: pw.value })
+  })
+  if (res.ok) location.href = '/owner.html'
+  else {
+    const t = await res.text()
+    alert('作成できません: ' + t)
+  }
+}
+</script>

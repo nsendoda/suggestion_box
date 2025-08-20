@@ -31,7 +31,8 @@
     <a href="/owner.html">▶︎ オーナーページ</a>
   </nav>
   <script>
-    const ownerId = "owner1";
+    const qp = new URLSearchParams(location.search);
+const ownerId = qp.get('o') || document.getElementById('ownerIdInput').value;
     document.getElementById("f").addEventListener("submit", async (e)=>{
       e.preventDefault();
       const content = new FormData(e.target).get("content");

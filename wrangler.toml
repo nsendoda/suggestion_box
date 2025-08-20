@@ -6,3 +6,11 @@ compatibility_date = "2025-08-08"
 binding = "DB"
 database_name = "to-sho-box-db"
 database_id = "cb739146-1eb6-46cb-8f1c-963d082b59ba"
+
+[vars]
+OWNER_PASSWORD = "noshinoshi"
+SESSION_TTL_DAYS = "7"           # 期限（日）。省略可（デフォルト7）
+
+[vars]
+MAX_OWNERS = "50"       # 上限（超えたらサインアップ拒否）
+SIGNUPS_HARD_OFF = "0"   # 強制OFF（運用で即止めたい時用）
