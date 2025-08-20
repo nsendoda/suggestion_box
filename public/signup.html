@@ -2,15 +2,25 @@
 <input id="pw" type="password" placeholder="パスワード (6文字以上)">
 <button id="go">作成</button>
 <script>
-go.onclick = async () => {
-  const res = await fetch('/api/signup', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ ownerId: id.value.trim(), password: pw.value })
-  })
-  if (res.ok) location.href = '/owner.html'
-  else {
-    const t = await res.text()
-    alert('作成できません: ' + t)
+document.getElementById('go').onclick = async () => {
+  let ownerId = document.getElementById('id').value;
+  ownerId = ownerId.trim().toLowerCase();   // ← ここを追加
+  const password = document.getElementById('pw').value;
+
+  // 任意のクライアント側チェック
+  if (!/^[a-z0-9_-]{3,32}$/.test(ownerId)) {
+    alert('ユーザーIDは英数・-_で3〜32文字'); return;
   }
-}
+  if (password.length < 6) {
+    alert('パスワードは6文字以上'); return;
+  }
+
+  const res = await fetch('/api/signup', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ ownerId, password })
+  });
+  if (res.ok) location.href = '/owner.html';
+  else alert('作成できません: ' + (await res.text()));
+};
 </script>

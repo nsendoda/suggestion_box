@@ -12,6 +12,8 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>()
 
+const normalizeId = (s: string) => s.trim().toLowerCase();
+
 // -------- Password PBKDF2 (HMAC-SHA-256) --------
 const te = new TextEncoder()
 const b64 = (ab: ArrayBuffer) =>
@@ -65,54 +67,45 @@ async function requireAuth(c: any, next: any) {
 }
 
 // サインアップ（開放時のみ）
-app.post(
-  '/api/signup',
-  zValidator('json', z.object({
-    ownerId: z.string().regex(/^[a-z0-9_-]{3,32}$/),
-    password: z.string().min(6),
-    displayName: z.string().max(40).optional()
-  })),
-  async (c) => {
-    // ハードOFF or settings OFF or 上限超過 を拒否
-    if (c.env.SIGNUPS_HARD_OFF === '1') return c.json({ error: 'closed' }, 403)
-    const s = await c.env.DB.prepare(
-      'SELECT value FROM settings WHERE key="signups_enabled"'
-    ).first<{ value: string }>()
-    if (!s || s.value !== '1') return c.json({ error: 'closed' }, 403)
-    const max = Number(c.env.MAX_OWNERS ?? '999999')
-    const cnt = await c.env.DB.prepare('SELECT COUNT(*) AS c FROM owners').first<{ c:number }>()
-    if ((cnt?.c ?? 0) >= max) return c.json({ error: 'limit' }, 403)
+app.post('/api/signup', zValidator('json', z.object({
+  ownerId: z.string().regex(/^[a-z0-9_-]{3,32}$/),  // 小文字のみを許可
+  password: z.string().min(6),
+  displayName: z.string().max(40).optional()
+})), async (c) => {
+  let { ownerId, password, displayName } = c.req.valid('json')
+  ownerId = normalizeId(ownerId)
 
-    const { ownerId, password, displayName } = c.req.valid('json')
+  const exists = await c.env.DB.prepare('SELECT 1 FROM owners WHERE id=?')
+    .bind(ownerId).first()
+  if (exists) return c.json({ error: 'duplicate' }, 409)
 
-    const exists = await c.env.DB.prepare('SELECT 1 FROM owners WHERE id=?').bind(ownerId).first()
-    if (exists) return c.json({ error: 'duplicate' }, 409)
+  const { salt, hash } = await hashPassword(password)
+  await c.env.DB.prepare(
+    'INSERT INTO owners(id, display_name, pw_salt, pw_hash, is_admin) ' +
+    'VALUES(?,?,?,?, CASE WHEN (SELECT COUNT(*) FROM owners)=0 THEN 1 ELSE 0 END)'
+  ).bind(ownerId, displayName ?? ownerId, salt, hash).run()
 
-    const { salt, hash } = await hashPassword(password)
-    await c.env.DB.prepare(
-      'INSERT INTO owners(id, display_name, pw_salt, pw_hash, is_admin) VALUES(?,?,?,?, CASE WHEN (SELECT COUNT(*) FROM owners)=0 THEN 1 ELSE 0 END)'
-    ).bind(ownerId, displayName ?? ownerId, salt, hash).run()
+  await createSession(c, ownerId)
+  return c.json({ ok: true })
+})
 
-    await createSession(c, ownerId)
-    return c.json({ ok: true })
+app.post('/api/login', zValidator('json', z.object({
+  ownerId: z.string(), password: z.string()
+})), async (c) => {
+  let { ownerId, password } = c.req.valid('json')
+  ownerId = normalizeId(ownerId)
+
+  const row = await c.env.DB.prepare(
+    'SELECT pw_salt, pw_hash FROM owners WHERE id=?'
+  ).bind(ownerId).first<{ pw_salt: string; pw_hash: string }>()
+
+  if (!row) return c.json({ error: 'notfound' }, 404)
+  if (!(await verifyPassword(password, row.pw_salt, row.pw_hash))) {
+    return c.json({ error: 'unauthorized' }, 401)
   }
-)
-
-app.post(
-  '/api/login',
-  zValidator('json', z.object({ ownerId: z.string(), password: z.string() })),
-  async (c) => {
-    const { ownerId, password } = c.req.valid('json')
-    const row = await c.env.DB.prepare(
-      'SELECT pw_salt, pw_hash FROM owners WHERE id=?'
-    ).bind(ownerId).first<{ pw_salt: string; pw_hash: string }>()
-    if (!row || !(await verifyPassword(password, row.pw_salt, row.pw_hash))) {
-      return c.json({ error: 'unauthorized' }, 401)
-    }
-    await createSession(c, ownerId)
-    return c.json({ ok: true })
-  }
-)
+  await createSession(c, ownerId)
+  return c.json({ ok: true })
+})
 
 app.post('/api/logout', async (c) => {
   const t = getCookie(c, 'sb_session')

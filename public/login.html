@@ -21,28 +21,19 @@
 <input id="pw" type="password">
 <button id="go">ログイン</button>
 <script>
-go.onclick = async () => {
+document.getElementById('go').onclick = async () => {
+  let ownerId = document.getElementById('id').value;
+  ownerId = ownerId.trim().toLowerCase();  
+  const password = document.getElementById('pw').value;
+
   const res = await fetch('/api/login', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ ownerId: id.value.trim(), password: pw.value })
-  })
-  if (res.ok) location.href = '/owner.html'
-  else alert('ID またはパスワードが違います')
-}
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ ownerId, password })
+  });
+  if (res.ok) location.href = '/owner.html';
+  else alert('ID またはパスワードが違います');
+};
 </script>
-    <div class="hint"><a href="/">◀︎ トップへ戻る</a></div>
-  </div>
-  <script>
-    document.getElementById('go').onclick = async () => {
-      const password = document.getElementById('pw').value
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ password })
-      })
-      if (res.ok) location.href = '/owner.html'
-      else alert('パスワードが違います')
-    }
-  </script>
 </body>
 </html>
