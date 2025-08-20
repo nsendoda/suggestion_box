@@ -1,63 +1,206 @@
-<!-- owner.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <title>お題箱 – オーナーダッシュボード</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>オーナーダッシュボード</title>
+
+  <!-- テーマ（前回の #ネガハピ CSS） -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Potta+One&family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/negahapi.css">
   <style>
-    body{font-family:"Yu Gothic",sans-serif;background:#fff8f8;margin:0;padding:2rem;color:#333}
-    h1{margin:0 0 1rem;font-size:1.6rem;color:#ff8d8d;text-align:center}
-    #card{margin:2rem auto;padding:1.5rem;width:90vw;max-width:600px;background:#fff;border-radius:1rem;box-shadow:0 3px 8px rgba(0,0,0,.1);min-height:5rem;display:none;flex-direction:column;gap:1rem;white-space:pre-wrap;line-height:1.5}
-    #actions{display:flex;gap:1rem;justify-content:center}
-    .btn{padding:.5rem 1.5rem;border:none;border-radius:9999px;font-weight:bold;cursor:pointer;color:#fff}
-    .btn-done{background:#4caf50}
-    .btn-reject{background:#f44336}
-    #draw{display:block;margin:0 auto;padding:.7rem 2.5rem;border:none;border-radius:9999px;background:#ff8d8d;color:#fff;font-weight:bold;cursor:pointer;box-shadow:0 3px 6px rgba(0,0,0,.15)}
-    nav{text-align:center;margin-top:2rem}
-    a{color:#ff8d8d;text-decoration:none;font-weight:bold}
+    /* ちょい足し */
+    .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .spacer{flex:1}
+    .close{x:-}
+    .close{background:transparent;border:none;color:#aaa;font-size:14px;cursor:pointer}
+    .close:hover{color:#fff;text-decoration:underline}
   </style>
 </head>
 <body>
-  <h1>オーナーダッシュボード</h1>
-  <button id="draw">ランダムに引く</button>
-  <section id="card">
-    <div id="cardContent"></div>
-    <div id="actions">
-      <button class="btn btn-done" id="btnDone">完了</button>
-      <button class="btn btn-reject" id="btnReject">棄却</button>
+  <header class="nav">
+    <div class="brand">ネガティヴハッピィ<span class="sub"> 投書箱</span></div>
+    <div class="toolbar">
+      <button id="copyLink" class="btn btn-ghost" title="自分の投書ページURLをコピー">投書ページURLをコピー</button>
     </div>
-  </section>
-  <nav>
-    <a href="/owner/list.html">一覧を見る ▶︎</a> | 
-    <a href="/">◀︎ 投書ページへ戻る</a>
-  </nav>
+  </header>
+
+  <main class="wrap">
+    <h1>オーナーダッシュボード</h1>
+    <div class="toolbar" style="margin:12px 0 20px">
+      <button id="draw" class="btn btn-contrast">投書箱から一枚引く</button>
+      <span class="hint">上限に達していると引けません</span>
+      <span class="spacer"></span>
+      <a class="btn btn-ghost" href="/owner/list">一覧を見る</a>
+    </div>
+
+    <!-- 引いたカード -->
+    <section id="drawn" class="card floaty" style="display:none; margin:10px 0 16px">
+      <div class="meta">
+        <span id="statusBadge" class="badge keep">保留中</span>
+        <span class="hint" id="drawnTime"></span>
+      </div>
+      <div id="drawnContent" style="white-space:pre-wrap; font-size:16px; margin-top:8px"></div>
+      <div class="actions" style="margin-top:12px">
+        <button class="btn btn-contrast" id="btnDone">完了</button>
+        <button class="btn btn-primary" id="btnHold">保留</button>
+        <button class="btn btn-ghost" id="btnDrop">棄却</button>
+        <button class="close" id="btnClose" title="閉じる（保留のまま）">× とじる</button>
+      </div>
+    </section>
+
+    <div id="toast" class="hint"></div>
+  </main>
 
   <script>
-async function getMe(){
-  const r = await fetch('/api/me');
-  if(!r.ok){ location.href='/login.html'; return; }
-  return (await r.json()).ownerId;
-}
-let ownerId = await getMe();
-    let currentId=null;
-    const card=document.getElementById("card");
-    const cardContent=document.getElementById("cardContent");
+    // ===== ユーティリティ =====
+    const $ = (id) => document.getElementById(id)
+    let ownerId = null
+    let currentId = null
+    let confettiShown = false  // ページ内で最初の一回だけクラッカー
 
-    async function draw(){
-      const res=await fetch(`/api/owners/${ownerId}/draw`,{method:"POST"});
-      const data=await res.json();
-      if(res.ok){currentId=data.id;cardContent.textContent=data.content;card.style.display="flex";}else alert(data.error);
-    }
-    async function update(status){
-      if(!currentId)return;
-      await fetch(`/api/owners/${ownerId}/letters/${currentId}/status`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({status})});
-      card.style.display="none";currentId=null;
+    async function getMe(){
+      const r = await fetch('/api/me')
+      if(!r.ok){ location.href='/login.html'; return }
+      const { ownerId: me } = await r.json()
+      ownerId = me
+      return me
     }
 
-    document.getElementById("draw").onclick=draw;
-    document.getElementById("btnDone").onclick=()=>update("完了");
-    document.getElementById("btnReject").onclick=()=>update("棄却");
+    function showToast(msg, ms=1400){
+      const t = $('toast')
+      t.textContent = msg
+      setTimeout(()=>{ t.textContent='' }, ms)
+    }
+
+    // ===== URLコピー =====
+    async function copyMyBoxUrl(){
+      const url = `${location.origin}/box.html?o=${encodeURIComponent(ownerId)}`
+      try{
+        await navigator.clipboard.writeText(url)
+        showToast('URLをコピーしました')
+      }catch{
+        // フォールバック
+        const ta = document.createElement('textarea')
+        ta.value = url; document.body.appendChild(ta); ta.select()
+        document.execCommand('copy'); ta.remove()
+        showToast('URLをコピーしました')
+      }
+    }
+
+    // ===== クラッカー（軽量コンフェッティ） =====
+    function launchConfetti(duration=1600, count=120){
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      const dpr = window.devicePixelRatio || 1
+      let w = innerWidth, h = innerHeight
+      canvas.style.cssText = 'position:fixed;inset:0;z-index:9999;pointer-events:none'
+      canvas.width = w*dpr; canvas.height = h*dpr; ctx.scale(dpr,dpr)
+      document.body.appendChild(canvas)
+
+      const colors = ['#ff2e92','#b8ff3e','#7af0ff','#ffffff']
+      const P = Array.from({length: count}, () => ({
+        x: Math.random()*w,
+        y: -20 - Math.random()*h*0.2,
+        vx: (Math.random()-0.5)*3,
+        vy: 2 + Math.random()*3,
+        size: 4 + Math.random()*6,
+        rot: Math.random()*Math.PI,
+        vr: (Math.random()-0.5)*0.2,
+        color: colors[Math.floor(Math.random()*colors.length)],
+        life: 1
+      }))
+
+      const start = performance.now()
+      const g = ctx.createLinearGradient(0,0,0,h)
+      g.addColorStop(0,'rgba(255,255,255,.2)')
+      g.addColorStop(1,'transparent')
+
+      function tick(t){
+        const dt = 16/1000
+        const elapsed = t - start
+        ctx.clearRect(0,0,w,h)
+        ctx.fillStyle = g; ctx.fillRect(0,0,w,h*0.15)
+
+        for(const p of P){
+          p.vy += 0.04
+          p.x += p.vx; p.y += p.vy
+          p.rot += p.vr
+          if(elapsed > duration*0.6) p.life -= 0.02
+          ctx.save()
+          ctx.globalAlpha = Math.max(p.life, 0)
+          ctx.translate(p.x, p.y)
+          ctx.rotate(p.rot)
+          ctx.fillStyle = p.color
+          ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size)
+          ctx.restore()
+        }
+        if(elapsed < duration && P.some(p=>p.life>0 && p.y<h+20)){
+          requestAnimationFrame(tick)
+        }else{
+          canvas.remove()
+        }
+      }
+      requestAnimationFrame(tick)
+    }
+
+    // ===== 動作 =====
+    $('draw').onclick = async () => {
+      const res = await fetch(`/api/owners/${ownerId}/draw`, { method:'POST' })
+      if(!res.ok){
+        const txt = await res.text()
+        alert(`引けませんでした：${res.status}\n${txt.slice(0,200)}`)
+        return
+      }
+      const data = await res.json()
+      currentId = data.id
+      $('drawnContent').textContent = data.content
+      $('statusBadge').textContent = '保留中'  // DB値は「保持」だが表示は「保留」
+      $('drawnTime').textContent = new Date().toLocaleString()
+      $('drawn').style.display = 'block'
+
+      if(!confettiShown){
+        launchConfetti()
+        confettiShown = true
+      }
+    }
+
+    // 3つのボタン
+    $('btnDone').onclick = () => updateCurrent('完了')
+    $('btnDrop').onclick = () => updateCurrent('棄却')
+    $('btnHold').onclick = () => updateCurrent('保留') // 表示は保留、APIは「保持」に変換
+
+    async function updateCurrent(label){
+      if(!currentId) return
+      const apiStatus = (label === '保留') ? '保持' : label  // APIは「保持」
+      const res = await fetch(`/api/owners/${ownerId}/letters/${currentId}/status`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ status: apiStatus })
+      })
+      if(!res.ok){
+        const txt = await res.text()
+        alert(`更新失敗：${res.status}\n${txt.slice(0,200)}`)
+        return
+      }
+      showToast(`${label}にしました`)
+      $('drawn').style.display = 'none'
+      currentId = null
+    }
+
+    // とじる（API呼ばない＝保留のまま）
+    $('btnClose').onclick = ()=>{
+      $('drawn').style.display='none'
+      showToast('保留のまま閉じました')
+    }
+
+    // 初期化
+    (async ()=>{
+      await getMe()
+      $('copyLink').onclick = copyMyBoxUrl
+    })()
   </script>
 </body>
 </html>

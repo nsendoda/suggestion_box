@@ -179,7 +179,7 @@ app.get('/api/owners/:ownerId/letters', requireAuth, async (c) => {
 app.post('/api/owners/:ownerId/letters/:id/status', requireAuth, async (c) => {
   const { ownerId, id } = c.req.param()
   const res = assertOwnerMatch(c, ownerId); if (res) return res
-  const { status } = await c.req.json() as { status: '完了'|'棄却' }
+  const { status } = await c.req.json() as { status: '完了'|'棄却'|'保持' }
   await c.env.DB.prepare(
     'UPDATE letters SET status=?, updated_at=CURRENT_TIMESTAMP WHERE id=? AND owner_id=?'
   ).bind(status, id, ownerId).run()

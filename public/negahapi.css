@@ -1,0 +1,130 @@
+/* ========= #ネガハピ Theme ========= */
+:root{
+  /* 苦い黒 × 毒パステル */
+  --bg: #0b0d12;
+  --panel: #141826;
+  --panel-2: #1a1f30;
+  --text: #eef0f6;
+  --muted: #a8acc0;
+
+  --pink: #ff2e92;    /* 断言のピンク */
+  --lime: #b8ff3e;    /* 毒っぽいライム */
+  --cyan: #7af0ff;    /* 透明サイバー */
+  --warn: #ff7a7a;
+  --ok: #8df8c9;
+
+  --radius: 18px;
+  --ring: 0 0 0 3px rgba(255,46,146,.25);
+  --shadow: 0 12px 36px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.04) inset;
+}
+
+/* 背景に淡いグラデ＋走査線ノイズ */
+html,body{height:100%}
+body{
+  margin:0; color:var(--text);
+  font-family:"Zen Maru Gothic","Hiragino Kaku Gothic ProN","Meiryo",system-ui,sans-serif;
+  background:
+    radial-gradient(60rem 60rem at 110% 120%, #1e1520 0%, transparent 60%),
+    radial-gradient(80rem 80rem at -10% -10%, #14192a 0%, transparent 60%),
+    var(--bg);
+}
+body::before{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:-1;
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.02) 0 2px, transparent 2px 4px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.015) 0 1px, transparent 1px 3px);
+  mix-blend-mode:soft-light; opacity:.5;
+}
+
+a{ color:var(--pink); text-decoration:none }
+a:hover{ text-decoration:underline }
+
+.wrap{ max-width:960px; margin:48px auto; padding:0 20px }
+.center{ display:grid; place-items:center }
+
+/* タイポ：見出しは“叫び”、本文は丸み */
+h1,h2,h3{ margin:0 0 .6em; letter-spacing:.02em; line-height:1.1 }
+h1,.brand{
+  font-family:"Potta One","Zen Maru Gothic",system-ui,sans-serif;
+  color:var(--pink);
+  font-size:clamp(28px,3.2vw,40px);
+}
+h2{ color:#eebcff }
+
+/* ステッカー風ロゴ/タグ */
+.sticker{
+  display:inline-block; padding:.3em .7em; border-radius:12px;
+  background: #fff; color:#111; font-weight:800;
+  transform: rotate(-2deg);
+  box-shadow: 0 4px 0 #111, 0 10px 24px rgba(0,0,0,.25);
+}
+.sticker--alt{
+  background: linear-gradient(135deg, var(--pink), var(--cyan));
+  color:#fff; box-shadow: 0 4px 0 #3b0b29, 0 10px 24px rgba(255,46,146,.35);
+}
+
+/* カード */
+.card{
+  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:20px; backdrop-filter:saturate(120%) blur(6px);
+}
+
+/* 入力 */
+input[type="text"], input[type="password"], textarea, select{
+  width:100%; color:var(--text); background:var(--panel-2);
+  border:1px solid rgba(255,255,255,.08); border-radius:14px;
+  padding:12px 14px; outline:none; font-size:15px;
+}
+textarea{ min-height:120px; resize:vertical }
+input:focus, textarea:focus{ border-color: var(--pink); box-shadow: var(--ring) }
+
+/* ボタン */
+.btn{
+  appearance:none; border:none; cursor:pointer; font-weight:900;
+  border-radius:9999px; padding:12px 18px; transition:.15s transform,.2s box-shadow,.2s filter;
+}
+.btn:disabled{ filter:grayscale(.6); opacity:.7; cursor:not-allowed }
+.btn-primary{
+  color:#111; background: linear-gradient(135deg, var(--lime), #fff4);
+  box-shadow: 0 8px 24px rgba(184,255,62,.25);
+}
+.btn-primary:hover{ transform: translateY(-1px) }
+.btn-contrast{
+  color:#fff; background: linear-gradient(135deg, var(--pink), var(--cyan));
+  box-shadow: 0 8px 24px rgba(255,46,146,.35);
+}
+.btn-ghost{ color:var(--muted); background:transparent; border:1px dashed rgba(255,255,255,.25) }
+.btn-ghost:hover{ color:#fff; border-color:var(--pink) }
+
+.hint{ color:var(--muted); font-size:12px }
+.badge{
+  display:inline-flex; align-items:center; gap:.4em;
+  padding:.2em .7em; border-radius:999px; font-size:12px;
+  border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.04)
+}
+.badge.keep{ color:#ffd1e6; border-color:rgba(255,46,146,.5); background:rgba(255,46,146,.12) }
+.badge.done{ color:#d0ffe9; border-color:rgba(141,248,201,.5); background:rgba(141,248,201,.12) }
+.badge.drop{ color:#ffe0e0; border-color:rgba(255,122,122,.5); background:rgba(255,122,122,.12) }
+
+/* リスト/カード */
+.list{ display:grid; gap:16px; margin:20px 0 }
+.item{
+  display:grid; gap:10px; padding:16px; background:var(--panel);
+  border-radius:var(--radius); border:1px solid rgba(255,255,255,.06); box-shadow:var(--shadow)
+}
+.item .meta{ display:flex; gap:8px; align-items:center; justify-content:space-between; color:var(--muted); font-size:12px }
+.item .actions{ display:flex; gap:8px; justify-content:flex-end }
+
+/* ふわっと浮く */
+.floaty{ animation:floaty 4s ease-in-out infinite }
+@keyframes floaty{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-4px) } }
+
+/* ナビ */
+.nav{
+  background:rgba(255,255,255,.04); border-bottom:1px solid rgba(255,255,255,.06);
+  padding:10px 16px; display:flex; align-items:center; justify-content:space-between
+}
+.brand .sub{ font-size:12px; color:var(--muted); margin-left:8px }
