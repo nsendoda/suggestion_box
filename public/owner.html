@@ -81,6 +81,40 @@
           box-shadow: 0 0 0 0 rgba(255, 141, 141, 0);
         }
       }
+
+      /* 既存の下に追記 */
+      h1 {
+        text-align: center;
+      }
+
+      /* 見出し行：中央のボタン群 + 右端の「一覧を見る」 */
+      .toolbar-center {
+        display: grid;
+        grid-template-columns: 1fr auto; /* 左:中央ブロック / 右:リンク */
+        gap: 14px;
+        align-items: center;
+      }
+      .center-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* 横中央 */
+        justify-content: center;
+        width: 100%;
+      }
+      .center-wrap .hint {
+        margin-top: 10px;
+        text-align: center; /* 文字も中央 */
+      }
+
+      /* スマホ：1カラムに落として右下にリンク */
+      @media (max-width: 560px) {
+        .toolbar-center {
+          grid-template-columns: 1fr;
+        }
+        .toolbar-center > a {
+          justify-self: end;
+        }
+      }
     </style>
   </head>
   <body>
@@ -99,12 +133,15 @@
 
     <main class="wrap">
       <h1>オーナーダッシュボード</h1>
-      <div class="toolbar" style="margin: 12px 0 20px">
-        <button id="draw" class="btn btn-contrast btn-giant">
-          <span class="ico">🎉</span> 投書箱から一枚引く
-        </button>
-        <span class="hint">上限に達していると引けません</span>
-        <span class="spacer"></span>
+      <div class="toolbar toolbar-center" style="margin: 12px 0 20px">
+        <div class="center-wrap">
+          <button id="draw" class="btn btn-contrast btn-giant">
+            <span class="ico">🎉</span> 投書箱から一枚引く
+          </button>
+          <div class="hint">上限に達していると引けません</div>
+        </div>
+
+        <!-- 右端 -->
         <a class="btn btn-ghost" href="/owner/list">一覧を見る</a>
       </div>
 
@@ -144,327 +181,293 @@
     </main>
 
     <script>
-      // ===== ユーティリティ =====
-      const $ = (id) => document.getElementById(id);
-      let ownerId = null;
-      let currentId = null;
-      let confettiShown = false; // ページ内で最初の一回だけクラッカー
+      (() => {
+        // ===== ユーティリティ =====
+        const $ = (id) => document.getElementById(id);
 
-      async function getMe() {
-        const r = await fetch("/api/me");
-        if (!r.ok) {
-          location.href = "/login.html";
-          return;
+        let ownerId = null;
+        let ownerDisplayName = null;
+        let currentId = null;
+        let drawing = false; // ★重複させない
+
+        function showToast(msg, ms = 1400) {
+          const t = $("toast");
+          if (!t) return;
+          t.textContent = msg;
+          setTimeout(() => (t.textContent = ""), ms);
         }
-        const { ownerId: me } = await r.json();
-        ownerId = me;
-        return me;
-      }
 
-      function showToast(msg, ms = 1400) {
-        const t = $("toast");
-        t.textContent = msg;
-        setTimeout(() => {
-          t.textContent = "";
-        }, ms);
-      }
-
-      // ===== URLコピー =====
-      async function copyMyBoxUrl() {
-        const url = `${location.origin}/box.html?o=${encodeURIComponent(
-          ownerId
-        )}`;
-        try {
-          await navigator.clipboard.writeText(url);
-          showToast("URLをコピーしました");
-        } catch {
-          // フォールバック
-          const ta = document.createElement("textarea");
-          ta.value = url;
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand("copy");
-          ta.remove();
-          showToast("URLをコピーしました");
-        }
-      }
-
-      // ===== クラッカー（軽量コンフェッティ） =====
-      // 派手めコンフェッティ（毎回呼べる）
-      function megaConfetti({
-        duration = 2200,
-        bursts = 3,
-        particles = 220,
-      } = {}) {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-        const dpr = devicePixelRatio || 1;
-        let w = innerWidth,
-          h = innerHeight;
-        canvas.style.cssText =
-          "position:fixed;inset:0;z-index:9999;pointer-events:none";
-        canvas.width = w * dpr;
-        canvas.height = h * dpr;
-        ctx.scale(dpr, dpr);
-        document.body.appendChild(canvas);
-
-        // おめでとう！テキスト
-        const textEl = document.createElement("div");
-        textEl.textContent = "おめでとう！";
-        textEl.style.cssText =
-          "position:fixed;left:50%;top:22%;transform:translate(-50%,-50%) scale(.9);" +
-          'font:800 clamp(28px,4vw,54px)/1 "Zen Maru Gothic",system-ui;color:#fff;' +
-          "text-shadow:0 6px 18px rgba(255,110,150,.55),0 0 22px rgba(255,255,255,.7);" +
-          "filter:drop-shadow(0 3px 10px rgba(0,0,0,.25));opacity:0;z-index:10000;";
-        document.body.appendChild(textEl);
-        requestAnimationFrame(() => {
-          textEl.style.transition =
-            "transform .8s cubic-bezier(.2,.9,.2,1),opacity .8s";
-          textEl.style.opacity = "1";
-          textEl.style.transform = "translate(-50%,-50%) scale(1)";
-        });
-
-        const colors = ["#ff2e92", "#ffb86c", "#7af0ff", "#b8ff3e", "#ffffff"];
-        const shapes = ["rect", "circle", "tri", "emoji"];
-        const P = [];
-        function spawnBurst(cx, cy, n) {
-          for (let i = 0; i < n; i++) {
-            const ang = Math.random() * Math.PI * 2;
-            const spd = 3 + Math.random() * 6;
-            const size = 4 + Math.random() * 8;
-            const shape =
-              shapes[Math.random() < 0.12 ? 3 : Math.floor(Math.random() * 3)];
-            P.push({
-              x: cx,
-              y: cy,
-              vx: Math.cos(ang) * spd,
-              vy: Math.sin(ang) * spd - 2,
-              g: 0.12 + Math.random() * 0.1,
-              fr: 0.007 + Math.random() * 0.01,
-              rot: Math.random() * Math.PI,
-              vr: (Math.random() - 0.5) * 0.25,
-              size,
-              color: colors[Math.floor(Math.random() * colors.length)],
-              life: 1,
-              shape,
-              emoji: ["✨", "🎉", "⭐"][Math.floor(Math.random() * 3)],
-            });
-          }
-        }
-        const shots = [
-          [w * 0.5, h * 0.35],
-          [w * 0.15, h * 0.28],
-          [w * 0.85, h * 0.28],
-        ];
-        for (let b = 0; b < bursts; b++) {
-          setTimeout(
-            () =>
-              shots.forEach(([cx, cy]) =>
-                spawnBurst(cx, cy, Math.round(particles / shots.length))
-              ),
-            b * (duration / bursts)
-          );
-        }
-        const start = performance.now();
-        function tick(t) {
-          ctx.clearRect(0, 0, w, h);
-          for (const p of P) {
-            p.vy += p.g;
-            p.vx *= 1 - p.fr;
-            p.vy *= 1 - p.fr;
-            p.x += p.vx;
-            p.y += p.vy;
-            p.rot += p.vr;
-            p.life -= 0.008;
-            ctx.save();
-            ctx.globalAlpha = Math.max(p.life, 0.05);
-            ctx.translate(p.x, p.y);
-            ctx.rotate(p.rot);
-            if (p.shape === "rect") {
-              ctx.fillStyle = p.color;
-              ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
-            } else if (p.shape === "circle") {
-              ctx.fillStyle = p.color;
-              ctx.beginPath();
-              ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
-              ctx.fill();
-            } else if (p.shape === "tri") {
-              ctx.fillStyle = p.color;
-              const s = p.size;
-              ctx.beginPath();
-              ctx.moveTo(0, -s / 2);
-              ctx.lineTo(-s / 2, s / 2);
-              ctx.lineTo(s / 2, s / 2);
-              ctx.closePath();
-              ctx.fill();
-            } else {
-              ctx.font = `${
-                p.size * 1.6
-              }px system-ui,"Apple Color Emoji","Segoe UI Emoji"`;
-              ctx.fillText(p.emoji, -p.size / 2, p.size / 2);
-            }
-            ctx.restore();
-          }
-          if (
-            t - start < duration ||
-            P.some((p) => p.life > 0 && p.y < h + 40)
-          ) {
-            requestAnimationFrame(tick);
-          } else {
-            canvas.remove();
-            textEl.style.opacity = "0";
-            textEl.style.transform = "translate(-50%,-50%) scale(.96)";
-            setTimeout(() => textEl.remove(), 350);
-          }
-        }
-        requestAnimationFrame(tick);
-      }
-
-      // ===== 動作 =====
-
-      let drawing = false;
-
-      $("draw").onclick = async () => {
-        if (drawing) return;
-        drawing = true;
-        const btn = $("draw");
-        btn.disabled = true;
-
-        try {
-          const res = await fetch(`/api/owners/${ownerId}/draw`, {
-            method: "POST",
-          });
-          if (!res.ok) {
-            const txt = await res.text();
-            alert(`引けませんでした：${res.status}\n${txt.slice(0, 200)}`);
+        // 自分情報
+        async function getMe() {
+          const r = await fetch("/api/me");
+          if (!r.ok) {
+            location.href = "/login.html";
             return;
           }
-          const data = await res.json();
-          currentId = data.id;
-          $("drawnContent").textContent = data.content;
-          $("statusBadge").textContent = "保留中";
-          $("drawnTime").textContent = new Date().toLocaleString();
-          $("drawn").style.display = "block";
+          const me = await r.json(); // { ownerId, displayName? } or { id }
+          ownerId = me.ownerId || me.id;
+          ownerDisplayName = me.displayName || "@" + ownerId;
 
-          // ★毎回ド派手に
-          megaConfetti();
-        } finally {
-          drawing = false;
-          btn.disabled = false;
-        }
-      };
-
-      // 3つのボタン
-      $("btnDone").onclick = () => updateCurrent("完了");
-      $("btnDrop").onclick = () => updateCurrent("棄却");
-      $("btnHold").onclick = () => updateCurrent("保留"); // 表示は保留、APIは「保持」に変換
-
-      async function updateCurrent(label) {
-        if (!currentId) return;
-        const apiStatus = label === "保留" ? "保持" : label; // APIは「保持」
-        const res = await fetch(
-          `/api/owners/${ownerId}/letters/${currentId}/status`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status: apiStatus }),
+          // displayName 未返却の環境向けフォールバック（あれば）
+          if (!me.displayName) {
+            try {
+              const pr = await fetch(`/api/owners/${ownerId}/profile`);
+              if (pr.ok) {
+                const p = await pr.json();
+                if (p.displayName) ownerDisplayName = p.displayName;
+              }
+            } catch {}
           }
-        );
-        if (!res.ok) {
-          const txt = await res.text();
-          alert(`更新失敗：${res.status}\n${txt.slice(0, 200)}`);
-          return;
+          return ownerId;
         }
-        showToast(`${label}にしました`);
-        $("drawn").style.display = "none";
-        currentId = null;
-      }
 
-      // とじる（API呼ばない＝保留のまま）
-      $("btnClose").onclick = () => {
-        $("drawn").style.display = "none";
-        showToast("保留のまま閉じました");
-      };
-
-      // 初期化
-      (async () => {
-        await getMe();
-        $("copyLink").onclick = copyMyBoxUrl;
-      })();
-
-      let ownerDisplayName = null;
-
-      async function getMe() {
-        const r = await fetch("/api/me");
-        if (!r.ok) {
-          location.href = "/login.html";
-          return;
-        }
-        const me = await r.json(); // { ownerId, displayName? }
-        ownerId = me.ownerId || me.id || null;
-        ownerDisplayName = me.displayName || "@" + ownerId;
-
-        // displayName が返らない環境向けフォールバック（任意）
-        if (!me.displayName) {
+        // URL コピー
+        async function copyMyBoxUrl() {
+          const url = `${location.origin}/box.html?o=${encodeURIComponent(
+            ownerId
+          )}`;
           try {
-            const pr = await fetch(`/api/owners/${ownerId}/profile`);
-            if (pr.ok) {
-              const p = await pr.json();
-              ownerDisplayName = p.displayName || "@" + ownerId;
-            }
-          } catch {}
+            await navigator.clipboard.writeText(url);
+            showToast("URLをコピーしました");
+          } catch {
+            const ta = document.createElement("textarea");
+            ta.value = url;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            ta.remove();
+            showToast("URLをコピーしました");
+          }
         }
-        return ownerId;
-      }
 
-      function preview20(s) {
-        // 20文字に丸めて全角混在でも自然に（おおざっぱ）
-        const arr = [...s];
-        return arr.length > 20 ? arr.slice(0, 20).join("") + "…" : s;
-      }
+        // 20 文字プレビュー（全角混在ざっくり）
+        function preview20(s) {
+          const arr = [...s];
+          return arr.length > 20 ? arr.slice(0, 20).join("") + "…" : s;
+        }
 
-      let drawing = false;
-      $("draw").onclick = async () => {
-        if (drawing) return;
-        drawing = true;
-        const btn = $("draw");
-        btn.disabled = true;
+        // ===== ド派手コンフェッティ（毎回発火OK） =====
+        function megaConfetti({
+          duration = 2200,
+          bursts = 3,
+          particles = 220,
+        } = {}) {
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+          const dpr = devicePixelRatio || 1;
+          let w = innerWidth,
+            h = innerHeight;
+          canvas.style.cssText =
+            "position:fixed;inset:0;z-index:9999;pointer-events:none";
+          canvas.width = w * dpr;
+          canvas.height = h * dpr;
+          ctx.scale(dpr, dpr);
+          document.body.appendChild(canvas);
 
-        try {
-          const res = await fetch(`/api/owners/${ownerId}/draw`, {
-            method: "POST",
+          // テキスト
+          const textEl = document.createElement("div");
+          textEl.textContent = "おめでとう！";
+          textEl.style.cssText =
+            "position:fixed;left:50%;top:22%;transform:translate(-50%,-50%) scale(.9);" +
+            'font:800 clamp(28px,4vw,54px)/1 "Zen Maru Gothic",system-ui;color:#fff;' +
+            "text-shadow:0 6px 18px rgba(255,110,150,.55),0 0 22px rgba(255,255,255,.7);" +
+            "filter:drop-shadow(0 3px 10px rgba(0,0,0,.25));opacity:0;z-index:10000;";
+          document.body.appendChild(textEl);
+          requestAnimationFrame(() => {
+            textEl.style.transition =
+              "transform .8s cubic-bezier(.2,.9,.2,1),opacity .8s";
+            textEl.style.opacity = "1";
+            textEl.style.transform = "translate(-50%,-50%) scale(1)";
           });
+
+          const colors = [
+            "#ff2e92",
+            "#ffb86c",
+            "#7af0ff",
+            "#b8ff3e",
+            "#ffffff",
+          ];
+          const shapes = ["rect", "circle", "tri", "emoji"];
+          const P = [];
+          function spawnBurst(cx, cy, n) {
+            for (let i = 0; i < n; i++) {
+              const ang = Math.random() * Math.PI * 2;
+              const spd = 3 + Math.random() * 6;
+              const size = 4 + Math.random() * 8;
+              const shape =
+                shapes[
+                  Math.random() < 0.12 ? 3 : Math.floor(Math.random() * 3)
+                ];
+              P.push({
+                x: cx,
+                y: cy,
+                vx: Math.cos(ang) * spd,
+                vy: Math.sin(ang) * spd - 2,
+                g: 0.12 + Math.random() * 0.1,
+                fr: 0.007 + Math.random() * 0.01,
+                rot: Math.random() * Math.PI,
+                vr: (Math.random() - 0.5) * 0.25,
+                size,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                life: 1,
+                shape,
+                emoji: ["✨", "🎉", "⭐"][Math.floor(Math.random() * 3)],
+              });
+            }
+          }
+          const shots = [
+            [w * 0.5, h * 0.35],
+            [w * 0.15, h * 0.28],
+            [w * 0.85, h * 0.28],
+          ];
+          for (let b = 0; b < bursts; b++) {
+            setTimeout(
+              () =>
+                shots.forEach(([cx, cy]) =>
+                  spawnBurst(cx, cy, Math.round(particles / shots.length))
+                ),
+              b * (duration / bursts)
+            );
+          }
+          const start = performance.now();
+          function tick(t) {
+            ctx.clearRect(0, 0, w, h);
+            for (const p of P) {
+              p.vy += p.g;
+              p.vx *= 1 - p.fr;
+              p.vy *= 1 - p.fr;
+              p.x += p.vx;
+              p.y += p.vy;
+              p.rot += p.vr;
+              p.life -= 0.008;
+              ctx.save();
+              ctx.globalAlpha = Math.max(p.life, 0.05);
+              ctx.translate(p.x, p.y);
+              ctx.rotate(p.rot);
+              if (p.shape === "rect") {
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+              } else if (p.shape === "circle") {
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+                ctx.fill();
+              } else if (p.shape === "tri") {
+                ctx.fillStyle = p.color;
+                const s = p.size;
+                ctx.beginPath();
+                ctx.moveTo(0, -s / 2);
+                ctx.lineTo(-s / 2, s / 2);
+                ctx.lineTo(s / 2, s / 2);
+                ctx.closePath();
+                ctx.fill();
+              } else {
+                ctx.font = `${
+                  p.size * 1.6
+                }px system-ui,"Apple Color Emoji","Segoe UI Emoji"`;
+                ctx.fillText(p.emoji, -p.size / 2, p.size / 2);
+              }
+              ctx.restore();
+            }
+            if (
+              t - start < duration ||
+              P.some((p) => p.life > 0 && p.y < h + 40)
+            ) {
+              requestAnimationFrame(tick);
+            } else {
+              canvas.remove();
+              textEl.style.opacity = "0";
+              textEl.style.transform = "translate(-50%,-50%) scale(.96)";
+              setTimeout(() => textEl.remove(), 350);
+            }
+          }
+          requestAnimationFrame(tick);
+        }
+
+        // ===== 1枚引く =====
+        $("draw").onclick = async () => {
+          if (drawing) return;
+          drawing = true;
+          const btn = $("draw");
+          btn.disabled = true;
+
+          try {
+            const res = await fetch(`/api/owners/${ownerId}/draw`, {
+              method: "POST",
+            });
+            if (!res.ok) {
+              const txt = await res.text();
+              alert(`引けませんでした：${res.status}\n${txt.slice(0, 200)}`);
+              return;
+            }
+            const data = await res.json(); // { id, content }
+            currentId = data.id;
+
+            $("drawnContent").textContent = data.content;
+            $("statusBadge").textContent = "保留中";
+            $("drawnTime").textContent = new Date().toLocaleString();
+            $("drawn").style.display = "block";
+
+            // 祝砲！
+            megaConfetti();
+
+            // X(旧Twitter)共有リンク
+            const shareUrl = `${location.origin}/letter.html?id=${currentId}`;
+            const text = `${ownerDisplayName} さんへの投書が届いたよ！「${preview20(
+              data.content
+            )}」`;
+            const href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+              text
+            )}&url=${encodeURIComponent(shareUrl)}`;
+            const a = $("btnTweet");
+            if (a) {
+              a.href = href;
+              a.style.display = "inline-flex";
+            }
+          } finally {
+            drawing = false;
+            btn.disabled = false;
+          }
+        };
+
+        // 3つのボタン
+        $("btnDone").onclick = () => updateCurrent("完了");
+        $("btnDrop").onclick = () => updateCurrent("棄却");
+        $("btnHold").onclick = () => updateCurrent("保留"); // API は「保持」
+
+        async function updateCurrent(label) {
+          if (!currentId) return;
+          const apiStatus = label === "保留" ? "保持" : label;
+          const res = await fetch(
+            `/api/owners/${ownerId}/letters/${currentId}/status`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ status: apiStatus }),
+            }
+          );
           if (!res.ok) {
             const txt = await res.text();
-            alert(`引けませんでした：${res.status}\n${txt.slice(0, 200)}`);
+            alert(`更新失敗：${res.status}\n${txt.slice(0, 200)}`);
             return;
           }
-          const data = await res.json(); // { id, content }
-          currentId = data.id;
-          $("drawnContent").textContent = data.content;
-          $("statusBadge").textContent = "保留中";
-          $("drawnTime").textContent = new Date().toLocaleString();
-          $("drawn").style.display = "block";
-
-          // ★祝砲：毎回ド派手
-          megaConfetti();
-
-          // ★共有リンクを更新（公開閲覧ページを letter.html?id=xxx と仮定）
-          const shareUrl = `${location.origin}/letter.html?id=${currentId}`;
-          const text = `${ownerDisplayName} さんへの投書が届いたよ！「${preview20(
-            data.content
-          )}」`;
-          const tweet = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-            text
-          )}&url=${encodeURIComponent(shareUrl)}`;
-          const a = $("btnTweet");
-          a.href = tweet;
-          a.style.display = "inline-flex";
-        } finally {
-          drawing = false;
-          btn.disabled = false;
+          showToast(`${label}にしました`);
+          $("drawn").style.display = "none";
+          currentId = null;
         }
-      };
+
+        // とじる（API呼ばない＝保留のまま）
+        $("btnClose").onclick = () => {
+          $("drawn").style.display = "none";
+          showToast("保留のまま閉じました");
+        };
+
+        // 初期化
+        (async () => {
+          await getMe();
+          $("copyLink").onclick = copyMyBoxUrl;
+        })();
+      })();
     </script>
   </body>
 </html>
