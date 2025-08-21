@@ -440,19 +440,15 @@
             megaConfetti();
 
             // X共有リンク（省略せず従来通り）
-            const shareUrl = `${location.origin}/letter.html?id=${currentId}`;
-            const text = `${ownerDisplayName} さんへの投書が届いたよ！「${[
-              ...data.content,
-            ]
-              .slice(0, 20)
-              .join("")}${[...data.content].length > 20 ? "…" : ""}」`;
-            const a = $("btnTweet");
-            if (a) {
-              a.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                text
-              )}&url=${encodeURIComponent(shareUrl)}`;
-              a.style.display = "inline-flex";
-            }
+            // owner.html のツイート生成部分
+            const shareUrl = `${location.origin}/letter/${currentId}`; // ← これに変更
+            const text = `${ownerDisplayName}さんへの投書が届いたよ！\n「${preview20(
+              data.content
+            )}」`;
+            const intent = new URL("https://twitter.com/intent/tweet");
+            intent.searchParams.set("text", text);
+            intent.searchParams.set("url", shareUrl);
+            document.getElementById("btnTweet").href = intent.toString();
 
             // ★カード表示中はロック
             setDrawLock(true);
