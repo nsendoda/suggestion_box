@@ -1,51 +1,119 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>投書箱</title>
-  <style>
-    :root{--pink:#ff8d8d;--bg:#fff8f8}
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:#333;font-family:"Yu Gothic",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
-    header{padding:14px 20px;background:#222;color:#fff}
-    header .brand{font-weight:700}
-    .hero{display:grid;place-items:center;padding:80px 20px}
-    .logo{font-size:48px;font-weight:800;letter-spacing:.02em;color:#222}
-    .sub{color:#777;margin-top:6px}
-    .cta{display:flex;gap:14px;margin-top:28px;flex-wrap:wrap;justify-content:center}
-    .btn{appearance:none;border:none;border-radius:9999px;padding:14px 22px;font-weight:800;cursor:pointer}
-    .btn-primary{background:var(--pink);color:#fff}
-    .btn-outline{background:transparent;border:2px solid var(--pink);color:var(--pink)}
-    .sec{max-width:880px;margin:0 auto 64px;background:#fff;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.08);padding:24px}
-    h2{color:#e56d6d;margin:4px 0 12px}
-    ul{line-height:1.8}
-    footer{padding:28px 20px;text-align:center;color:#888}
-    a{color:var(--pink);text-decoration:none}
-  </style>
-</head>
-<body>
-  <header><span class="brand">投書箱</span></header>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>投書箱</title>
+    <style>
+      :root {
+        --pink: #ff8d8d;
+        --bg: #fff8f8;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: #333;
+        font-family: "Yu Gothic", system-ui, -apple-system, Segoe UI, Roboto,
+          Helvetica, Arial, sans-serif;
+      }
+      header {
+        padding: 14px 20px;
+        background: #222;
+        color: #fff;
+      }
+      header .brand {
+        font-weight: 700;
+      }
+      .hero {
+        display: grid;
+        place-items: center;
+        padding: 80px 20px;
+      }
+      .logo {
+        font-size: 48px;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        color: #222;
+      }
+      .sub {
+        color: #777;
+        margin-top: 6px;
+      }
+      .cta {
+        display: flex;
+        gap: 14px;
+        margin-top: 28px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .btn {
+        appearance: none;
+        border: none;
+        border-radius: 9999px;
+        padding: 14px 22px;
+        font-weight: 800;
+        cursor: pointer;
+      }
+      .btn-primary {
+        background: var(--pink);
+        color: #fff;
+      }
+      .btn-outline {
+        background: transparent;
+        border: 2px solid var(--pink);
+        color: var(--pink);
+      }
+      .sec {
+        max-width: 880px;
+        margin: 0 auto 64px;
+        background: #fff;
+        border-radius: 18px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        padding: 24px;
+      }
+      h2 {
+        color: #e56d6d;
+        margin: 4px 0 12px;
+      }
+      ul {
+        line-height: 1.8;
+      }
+      footer {
+        padding: 28px 20px;
+        text-align: center;
+        color: #888;
+      }
+      a {
+        color: var(--pink);
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <header><span class="brand">投書箱</span></header>
 
-  <section class="hero">
-    <div class="logo">toshobako</div>
-    <div class="sub">世界の声を聴こう</div>
-    <div class="cta">
-      <a class="btn btn-primary" href="/signup">投書箱をはじめる</a>
-      <a class="btn btn-outline" href="/login.html">ログイン</a>
-    </div>
-  </section>
+    <section class="hero">
+      <div class="logo">toshobako</div>
+      <div class="sub">世界の声を聴こう</div>
+      <div class="cta">
+        <a class="btn btn-primary" href="/signup">投書箱をはじめる</a>
+        <a class="btn btn-outline" href="/login.html">ログイン</a>
+      </div>
+    </section>
 
-  <section class="sec">
-    <h2>投書箱とは？</h2>
-    <ul>
-      <li>リンクを共有するだけで匿名の投書を受け取れます。</li>
-      <li>保持・完了・棄却の3ステータスで管理できます（保持の上限はユーザーごと）。</li>
-    </ul>
-  </section>
+    <section class="sec">
+      <h2>投書箱とは？</h2>
+      <ul>
+        <li>リンクを共有するだけで匿名の投書を受け取れます。</li>
+        <li>保持・完了・棄却の3ステータスで管理できます（保持の上限は3）。</li>
+      </ul>
+    </section>
 
-  <!-- <footer>
+    <!-- <footer>
     <a href="/box.html?o=demo">デモ用リンク</a>
   </footer> -->
-</body>
+  </body>
 </html>
