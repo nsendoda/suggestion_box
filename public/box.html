@@ -75,6 +75,35 @@
       .toplink {
         margin-top: 24px;
       }
+
+      /* 見出しを中央 */
+      h1 {
+        text-align: center;
+      }
+
+      /* 宛先ラベルを右寄せ＆少し控えめに */
+      #targetLabel {
+        text-align: right;
+        color: #888;
+        margin-bottom: 8px;
+      }
+
+      /* 送信ボタンを中央。ステータス文はボタンの下に中央表示 */
+      .actions {
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* 横中央 */
+        gap: 8px;
+      }
+
+      /* 「トップへ戻る」を中央に */
+      .toplink {
+        text-align: center;
+        margin-top: 24px;
+      }
+      .toplink a {
+        text-decoration: none;
+      }
     </style>
   </head>
   <body>
@@ -83,7 +112,7 @@
 
       <div id="err" class="error" hidden>
         箱（ユーザーID）が指定されていません。<br />
-        <div class="toplink"><a href="/">◀ トップへ戻る</a></div>
+        <div class="toplink"><a href="/">トップへ戻る</a></div>
         <div class="hint">共有リンク例：<code>/box.html?o=alice</code></div>
       </div>
 
@@ -101,7 +130,7 @@
         </div>
       </div>
 
-      <!-- <div class="toplink"><a href="/">◀ トップへ戻る</a></div> -->
+      <!-- <div class="toplink"><a href="/">トップへ戻る</a></div> -->
     </div>
 
     <script>
