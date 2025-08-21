@@ -1,26 +1,166 @@
-<input id="id" placeholder="希望ID (英数_-)">
-<input id="pw" type="password" placeholder="パスワード (6文字以上)">
-<button id="go">作成</button>
-<script>
-document.getElementById('go').onclick = async () => {
-  let ownerId = document.getElementById('id').value;
-  ownerId = ownerId.trim().toLowerCase();   // ← ここを追加
-  const password = document.getElementById('pw').value;
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>アカウント作成 – 投書箱</title>
+    <style>
+      :root {
+        --pink: #ff8d8d;
+        --bg: #fff8f8;
+        --ink: #333;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Yu Gothic", system-ui, -apple-system, Segoe UI, Roboto,
+          Helvetica, Arial, sans-serif;
+        min-height: 100dvh;
+        display: grid;
+        grid-template-rows: auto 1fr;
+      }
 
-  // 任意のクライアント側チェック
-  if (!/^[a-z0-9_-]{3,32}$/.test(ownerId)) {
-    alert('ユーザーIDは英数・-_で3〜32文字'); return;
-  }
-  if (password.length < 6) {
-    alert('パスワードは6文字以上'); return;
-  }
+      /* header */
+      header {
+        padding: 14px 20px;
+        background: #222;
+        color: #fff;
+      }
+      header .brand {
+        font-weight: 800;
+        letter-spacing: 0.02em;
+      }
+      header a {
+        color: inherit;
+        text-decoration: none;
+      }
 
-  const res = await fetch('/api/signup', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ ownerId, password })
-  });
-  if (res.ok) location.href = '/owner.html';
-  else alert('作成できません: ' + (await res.text()));
-};
-</script>
+      /* wrapper */
+      .wrap {
+        display: grid;
+        place-items: center;
+        padding: 40px 16px;
+      }
+
+      .card {
+        width: min(92vw, 520px);
+        background: #fff;
+        padding: 24px 22px;
+        border-radius: 18px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      }
+      h1 {
+        margin: 0 0 16px;
+        text-align: center;
+        color: var(--pink);
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        font-size: clamp(20px, 2.8vw, 28px);
+      }
+
+      .field {
+        margin: 14px 0;
+      }
+      .label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.92rem;
+        color: #666;
+        margin-bottom: 6px;
+      }
+      .input {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid #e6e6e6;
+        border-radius: 12px;
+        font-size: 16px;
+        background: #fff;
+      }
+      .hint {
+        font-size: 0.82rem;
+        color: #999;
+        margin-top: 6px;
+      }
+      .err {
+        font-size: 0.86rem;
+        color: #c94848;
+        margin: 6px 0 0;
+      }
+
+      .row {
+        display: flex;
+        gap: 10px;
+      }
+      .row .input {
+        flex: 1;
+      }
+
+      .btn {
+        appearance: none;
+        border: none;
+        border-radius: 9999px;
+        padding: 13px 18px;
+        font-weight: 800;
+        cursor: pointer;
+      }
+      .btn-primary {
+        width: 100%;
+        background: var(--pink);
+        color: #fff;
+      }
+      .btn-primary:disabled {
+        opacity: 0.6;
+        cursor: progress;
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--pink);
+      }
+
+      .footer {
+        margin-top: 14px;
+        text-align: center;
+        font-size: 0.92rem;
+      }
+      a {
+        color: var(--pink);
+        text-decoration: none;
+      }
+      .eye {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 12px;
+        color: #999;
+        cursor: pointer;
+        user-select: none;
+      }
+      .pwbox {
+        position: relative;
+      }
+    </style>
+  </head>
+  <body>
+    <header><a href="/" class="brand">投書箱</a></header>
+
+    <main class="wrap">
+      <div class="card">
+        <h1>アカウント作成</h1>
+
+        <div id="msg" class="err" style="display: none"></div>
+
+        <div class="field">
+          <div class="label">
+            <span>ユーザーID </span>
+          </div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>
