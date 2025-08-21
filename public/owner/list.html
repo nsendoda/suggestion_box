@@ -30,45 +30,71 @@
   </div>
   <ul id="list"></ul>
 
-  <script>
-    const ownerId="owner1";
-    const listEl=document.getElementById("list");
-    const chkInbox=document.getElementById("chkInbox");
+<script>
+  const $ = (sel) => document.querySelector(sel);
+  let ownerId = null;
 
-    async function load(){
-      const qs=chkInbox.checked?"?all=1":"";
-      const raw=await fetch(`/api/owners/${ownerId}/letters${qs}`).then(r=>r.json());
-      const data=Array.isArray(raw)?raw:raw.results||[];
-      listEl.innerHTML="";
-      if(data.length===0){listEl.innerHTML='<li style="text-align:center;color:#aaa;">表示する投書がありません</li>';return;}
-      data.forEach(l=>{
-        const li=document.createElement("li");
-        li.className=`status-${l.status}`;
-        const span=document.createElement("span");
-        span.textContent=`[${l.status}] ${l.content}`;
-        li.appendChild(span);
-        if(l.status==='保持'){
-          const btnDone=document.createElement("button");
-          btnDone.className="btn btn-done";btnDone.textContent="完了";
-          btnDone.onclick=()=>update(l.id,'完了');
-          const btnReject=document.createElement("button");
-          btnReject.className="btn btn-reject";btnReject.textContent="棄却";
-          btnReject.onclick=()=>update(l.id,'棄却');
-          li.appendChild(btnDone);
-          li.appendChild(btnReject);
-        }
-        listEl.appendChild(li);
-      });
+  // /api/me からログイン中のユーザーIDを取得（未ログインならログイン画面へ）
+  async function ensureOwnerId() {
+    const r = await fetch('/api/me', { credentials: 'include' });
+    if (r.status === 401) {
+      location.href = '/login.html';
+      throw new Error('unauthenticated');
+    }
+    const me = await r.json();
+    // /api/me が { ownerId: "..." } でも { id: "..." } でも拾えるように
+    ownerId = me.ownerId ?? me.id;
+    if (!ownerId) throw new Error('owner id missing from /api/me');
+    return ownerId;
+  }
+
+  // inbox 表示のチェックボックスとクエリ同期
+  const qs = new URLSearchParams(location.search);
+  const withInbox = qs.get('inbox') === '1';
+  $('#chkInbox').checked = withInbox;
+  $('#chkInbox').addEventListener('change', (e) => {
+    const u = new URL(location.href);
+    if (e.target.checked) u.searchParams.set('inbox', '1');
+    else u.searchParams.delete('inbox');
+    location.replace(u); // 再読み込みして反映
+  });
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, (m) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    }[m]));
+  }
+
+  async function load() {
+    await ensureOwnerId();
+
+    const url = `/api/owners/${encodeURIComponent(ownerId)}/letters` +
+                ($('#chkInbox').checked ? '?inbox=1' : '');
+    const r = await fetch(url, { credentials: 'include' });
+    if (!r.ok) {
+      const t = await r.text();
+      alert(`一覧取得エラー: ${r.status}\n${t.slice(0,200)}`);
+      return;
     }
 
-    async function update(id,status){
-      await fetch(`/api/owners/${ownerId}/letters/${id}/status`,{
-        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
-      load();
-    }
+    const data = await r.json();
+    const rows = Array.isArray(data) ? data : data.results;
 
-    chkInbox.onchange=load;
-    load();
-  </script>
+    const list = document.getElementById('list');
+    list.innerHTML = '';
+
+    for (const l of rows) {
+      const li = document.createElement('li');
+      li.className = `status-${l.status}`;
+      const label = (l.status === '保持') ? '保留' : l.status; // 表示は保留
+      li.innerHTML = `<span class="badge">[${label}]</span><span>${esc(l.content)}</span>`;
+      list.appendChild(li);
+    }
+  }
+
+  // 初回ロード
+  load();
+</script>
+
 </body>
 </html>
