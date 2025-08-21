@@ -87,39 +87,52 @@
         text-align: center;
       }
 
-      /* 見出し行：中央のボタン群 + 右端の「一覧を見る」 */
+      /* 置き換え */
       .toolbar-center {
         display: grid;
-        grid-template-columns: 1fr auto; /* 左:中央ブロック / 右:リンク */
+        grid-template-columns: 1fr auto 1fr; /* 左スペーサ / まん中 / 右リンク */
         gap: 14px;
         align-items: center;
       }
-      .center-wrap {
+      .toolbar-center > .center-wrap {
+        grid-column: 2; /* まん中の列を常に使う */
         display: flex;
         flex-direction: column;
-        align-items: center; /* 横中央 */
+        align-items: center;
         justify-content: center;
         width: 100%;
+        text-align: center;
       }
-      .center-wrap .hint {
-        margin-top: 10px;
-        text-align: center; /* 文字も中央 */
+      .toolbar-center > a {
+        grid-column: 3; /* 右端の列 */
+        justify-self: end;
       }
 
-      /* スマホ：1カラムに落として右下にリンク */
+      /* モバイル時は1カラム＋右下にリンク */
       @media (max-width: 560px) {
         .toolbar-center {
           grid-template-columns: 1fr;
         }
         .toolbar-center > a {
+          grid-column: auto;
           justify-self: end;
         }
+      }
+
+      /* ロック中のビジュアル（任意） */
+      .btn-giant.is-locked {
+        opacity: 0.65;
+        cursor: not-allowed;
+        filter: saturate(0.6);
+        animation-play-state: paused;
       }
     </style>
   </head>
   <body>
     <header class="nav">
-      <div class="brand">投書箱<span class="sub"> 世界の声を聴く函</span></div>
+      <div class="brand">
+        投書箱<span class="sub"> 世界の声を聴くrutubo</span>
+      </div>
       <div class="toolbar">
         <button
           id="copyLink"
@@ -184,11 +197,19 @@
       (() => {
         // ===== ユーティリティ =====
         const $ = (id) => document.getElementById(id);
-
         let ownerId = null;
         let ownerDisplayName = null;
-        let currentId = null;
-        let drawing = false; // ★重複させない
+
+        let currentId = null; // ← 表示中カードのID（ロック判定に使用）
+        let drawing = false; // ← 通信の連打防止
+
+        /* 追加：ロックの切替（見た目も変更） */
+        function setDrawLock(locked) {
+          const btn = $("draw");
+          if (!btn) return;
+          btn.disabled = locked;
+          btn.classList.toggle("is-locked", locked);
+        }
 
         function showToast(msg, ms = 1400) {
           const t = $("toast");
@@ -386,6 +407,13 @@
 
         // ===== 1枚引く =====
         $("draw").onclick = async () => {
+          // ★表示中のカードがある間は引かせない
+          if (currentId) {
+            alert(
+              "先に表示中のカードを「完了 / 保留 / 棄却」で処理してください。"
+            );
+            return;
+          }
           if (drawing) return;
           drawing = true;
           const btn = $("draw");
@@ -408,32 +436,37 @@
             $("drawnTime").textContent = new Date().toLocaleString();
             $("drawn").style.display = "block";
 
-            // 祝砲！
+            // 祝砲
             megaConfetti();
 
-            // X(旧Twitter)共有リンク
+            // X共有リンク（省略せず従来通り）
             const shareUrl = `${location.origin}/letter.html?id=${currentId}`;
-            const text = `${ownerDisplayName} さんへの投書が届いたよ！「${preview20(
-              data.content
-            )}」`;
-            const href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-              text
-            )}&url=${encodeURIComponent(shareUrl)}`;
+            const text = `${ownerDisplayName} さんへの投書が届いたよ！「${[
+              ...data.content,
+            ]
+              .slice(0, 20)
+              .join("")}${[...data.content].length > 20 ? "…" : ""}」`;
             const a = $("btnTweet");
             if (a) {
-              a.href = href;
+              a.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+                text
+              )}&url=${encodeURIComponent(shareUrl)}`;
               a.style.display = "inline-flex";
             }
+
+            // ★カード表示中はロック
+            setDrawLock(true);
           } finally {
             drawing = false;
-            btn.disabled = false;
+            // 通信は終わったが、カードが出ている間はロック維持
+            if (!currentId) btn.disabled = false;
           }
         };
 
-        // 3つのボタン
+        /* 置き換え：状態更新（完了/棄却/保留） */
         $("btnDone").onclick = () => updateCurrent("完了");
         $("btnDrop").onclick = () => updateCurrent("棄却");
-        $("btnHold").onclick = () => updateCurrent("保留"); // API は「保持」
+        $("btnHold").onclick = () => updateCurrent("保留"); // APIは「保持」に変換
 
         async function updateCurrent(label) {
           if (!currentId) return;
@@ -451,21 +484,37 @@
             alert(`更新失敗：${res.status}\n${txt.slice(0, 200)}`);
             return;
           }
-          showToast(`${label}にしました`);
           $("drawn").style.display = "none";
           currentId = null;
+          setDrawLock(false); // ★ロック解除
         }
 
-        // とじる（API呼ばない＝保留のまま）
+        /* 置き換え：×とじる（APIは呼ばない＝保持のまま） */
         $("btnClose").onclick = () => {
           $("drawn").style.display = "none";
-          showToast("保留のまま閉じました");
+          currentId = null; // ★表示は消えた＝次を引ける
+          setDrawLock(false); // ★ロック解除
         };
 
         // 初期化
         (async () => {
-          await getMe();
-          $("copyLink").onclick = copyMyBoxUrl;
+          const r = await fetch("/api/me");
+          if (!r.ok) {
+            location.href = "/login.html";
+            return;
+          }
+          const me = await r.json();
+          ownerId = me.ownerId || me.id;
+          ownerDisplayName = me.displayName || "@" + ownerId;
+
+          $("copyLink").onclick = async () => {
+            const url = `${location.origin}/box.html?o=${encodeURIComponent(
+              ownerId
+            )}`;
+            try {
+              await navigator.clipboard.writeText(url);
+            } catch {}
+          };
         })();
       })();
     </script>

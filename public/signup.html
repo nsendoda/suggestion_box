@@ -4,11 +4,20 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>アカウント作成 – 投書箱</title>
+
+    <!-- フォント（他ページと合わせ） -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Potta+One&family=Zen+Maru+Gothic:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+
     <style>
       :root {
         --pink: #ff8d8d;
         --bg: #fff8f8;
-        --ink: #333;
+        --card: #fff;
       }
       * {
         box-sizing: border-box;
@@ -16,151 +25,270 @@
       body {
         margin: 0;
         background: var(--bg);
-        color: var(--ink);
+        color: #333;
         font-family: "Yu Gothic", system-ui, -apple-system, Segoe UI, Roboto,
           Helvetica, Arial, sans-serif;
-        min-height: 100dvh;
-        display: grid;
-        grid-template-rows: auto 1fr;
       }
-
-      /* header */
       header {
-        padding: 14px 20px;
         background: #222;
         color: #fff;
+        padding: 12px 16px;
+        font-weight: 700;
       }
       header .brand {
-        font-weight: 800;
+        font-family: "Potta One", system-ui;
         letter-spacing: 0.02em;
       }
-      header a {
-        color: inherit;
-        text-decoration: none;
-      }
 
-      /* wrapper */
       .wrap {
-        display: grid;
-        place-items: center;
-        padding: 40px 16px;
-      }
-
-      .card {
-        width: min(92vw, 520px);
-        background: #fff;
-        padding: 24px 22px;
-        border-radius: 18px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 28px 16px 64px;
       }
       h1 {
-        margin: 0 0 16px;
         text-align: center;
         color: var(--pink);
         font-weight: 800;
         letter-spacing: 0.02em;
-        font-size: clamp(20px, 2.8vw, 28px);
+        margin: 10px 0 22px;
+        font-family: "Zen Maru Gothic", system-ui;
+      }
+
+      .card {
+        width: min(92vw, 680px);
+        margin: 0 auto;
+        background: var(--card);
+        border-radius: 18px;
+        padding: 20px;
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
       }
 
       .field {
         margin: 14px 0;
       }
       .label {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 0.92rem;
+        font-size: 0.9rem;
         color: #666;
         margin-bottom: 6px;
       }
+      /* 他CSSに負けないように重要度を上げる */
       .input {
-        width: 100%;
-        padding: 12px 14px;
-        border: 1px solid #e6e6e6;
-        border-radius: 12px;
-        font-size: 16px;
-        background: #fff;
+        width: 100% !important;
+        display: block;
+        background: #fff !important;
+        color: #333 !important;
+        border: 1px solid #e7e7e7 !important;
+        border-radius: 12px !important;
+        padding: 0.9rem 0.95rem !important;
+        font-size: 15px !important;
+        outline: none;
       }
-      .hint {
-        font-size: 0.82rem;
-        color: #999;
-        margin-top: 6px;
-      }
-      .err {
-        font-size: 0.86rem;
-        color: #c94848;
-        margin: 6px 0 0;
+      .input:focus {
+        border-color: var(--pink);
+        box-shadow: 0 0 0 3px rgba(255, 141, 141, 0.18);
       }
 
       .row {
-        display: flex;
-        gap: 10px;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
       }
-      .row .input {
-        flex: 1;
+      @media (min-width: 640px) {
+        .row {
+          grid-template-columns: 1fr 1fr;
+        }
       }
 
+      .hint {
+        color: #888;
+        font-size: 0.85rem;
+        margin-top: 6px;
+      }
+      .error {
+        color: #c94848;
+        background: #fff0f0;
+        border: 1px solid #ffc9c9;
+        padding: 0.8rem 1rem;
+        border-radius: 12px;
+        margin: 0.6rem 0;
+        display: none;
+      }
+      .success {
+        color: #2f995a;
+        background: #eafff4;
+        border: 1px solid #b9f1cf;
+        padding: 0.8rem 1rem;
+        border-radius: 12px;
+        margin: 0.6rem 0;
+        display: none;
+      }
+
+      .actions {
+        text-align: center;
+        margin-top: 14px;
+      }
       .btn {
         appearance: none;
         border: none;
         border-radius: 9999px;
-        padding: 13px 18px;
-        font-weight: 800;
-        cursor: pointer;
-      }
-      .btn-primary {
-        width: 100%;
+        padding: 12px 22px;
         background: var(--pink);
         color: #fff;
+        font-weight: 800;
+        cursor: pointer;
+        box-shadow: 0 10px 26px rgba(255, 141, 141, 0.35);
       }
-      .btn-primary:disabled {
+      .btn:disabled {
         opacity: 0.6;
         cursor: progress;
       }
-      .btn-ghost {
-        background: transparent;
-        color: var(--pink);
-      }
-
-      .footer {
-        margin-top: 14px;
+      .note {
         text-align: center;
-        font-size: 0.92rem;
+        margin-top: 10px;
+        font-size: 0.9rem;
       }
       a {
         color: var(--pink);
         text-decoration: none;
       }
-      .eye {
-        position: absolute;
-        right: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 12px;
-        color: #999;
-        cursor: pointer;
-        user-select: none;
-      }
-      .pwbox {
-        position: relative;
-      }
     </style>
   </head>
   <body>
-    <header><a href="/" class="brand">投書箱</a></header>
+    <header><span class="brand">投書箱</span></header>
 
-    <main class="wrap">
-      <div class="card">
-        <h1>アカウント作成</h1>
+    <div class="wrap">
+      <h1>アカウント作成</h1>
 
-        <div id="msg" class="err" style="display: none"></div>
+      <div class="card signup">
+        <div id="err" class="error"></div>
+        <div id="ok" class="success">
+          アカウントを作成しました。画面を切り替えています…
+        </div>
 
         <div class="field">
           <div class="label">
-            <span>ユーザーID </span>
+            ユーザーID（英数と <code>-_</code>、3〜32文字）
+          </div>
+          <input
+            id="id"
+            class="input"
+            placeholder="例: noshi"
+            autocomplete="username"
+          />
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <div class="label">表示名（任意）</div>
+            <input
+              id="display"
+              class="input"
+              placeholder="画面に表示する名前（任意）"
+            />
+          </div>
+          <div class="field">
+            <div class="label">パスワード（6文字以上）</div>
+            <input
+              id="pw"
+              class="input"
+              type="password"
+              placeholder="********"
+              autocomplete="new-password"
+            />
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="label">パスワード（確認）</div>
+          <input
+            id="pw2"
+            class="input"
+            type="password"
+            placeholder="もう一度入力"
+            autocomplete="new-password"
+          />
+        </div>
+
+        <div class="actions">
+          <button id="go" class="btn">作成する</button>
+          <div class="hint">
+            既にアカウントをお持ちの方は <a href="/login.html">ログイン</a>
           </div>
         </div>
       </div>
-    </main>
+    </div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const show = (el, msg) => {
+        el.textContent = msg;
+        el.style.display = "block";
+      };
+      const hide = (el) => {
+        el.style.display = "none";
+      };
+
+      function normalizeId(s) {
+        return (s || "").trim().toLowerCase();
+      }
+      function validId(s) {
+        return /^[a-z0-9_-]{3,32}$/.test(s);
+      }
+
+      $("go").onclick = async () => {
+        hide($("err"));
+        hide($("ok"));
+
+        let ownerId = normalizeId($("id").value);
+        const displayName = $("display").value.trim();
+        const pw = $("pw").value;
+        const pw2 = $("pw2").value;
+
+        if (!validId(ownerId)) {
+          show($("err"), "ユーザーIDは英数と -_ で 3〜32 文字にしてください。");
+          return;
+        }
+        if (pw.length < 6) {
+          show($("err"), "パスワードは 6 文字以上です。");
+          return;
+        }
+        if (pw !== pw2) {
+          show($("err"), "パスワードが一致しません。");
+          return;
+        }
+
+        $("go").disabled = true;
+        try {
+          const res = await fetch("/api/signup", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ownerId, password: pw, displayName }),
+          });
+
+          if (!res.ok) {
+            const t = await res.text();
+            show(
+              $("err"),
+              `作成できませんでした: ${res.status} ${t.slice(0, 200)}`
+            );
+            return;
+          }
+
+          show(
+            $("ok"),
+            "アカウントを作成しました。ダッシュボードへ移動します。"
+          );
+          // サインイン済みセッションが返る仕様なので、そのまま遷移
+          location.href = "/owner.html";
+        } catch (e) {
+          show(
+            $("err"),
+            "通信エラーが発生しました。時間をおいて再度お試しください。"
+          );
+        } finally {
+          $("go").disabled = false;
+        }
+      };
+    </script>
   </body>
 </html>

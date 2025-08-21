@@ -1,128 +1,209 @@
-<!-- public/owner/list.html -->
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-  <meta charset="utf-8" />
-  <title>投書一覧</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body{font-family:"Yu Gothic",sans-serif;background:#fafafa;margin:0;padding:1.5rem;color:#333}
-    h1{text-align:center;color:#ff8d8d;margin-bottom:1rem;font-size:1.6rem}
-    .toolbar{max-width:760px;margin:0 auto 1rem;display:flex;justify-content:space-between;align-items:center;font-size:.9rem}
-    ul{list-style:none;padding:0;max-width:760px;margin:0 auto}
-    li{background:#fff;border-left:6px solid #ff8d8d;margin-bottom:1rem;padding:1rem 1.2rem;border-radius:.8rem;box-shadow:0 2px 5px rgba(0,0,0,.08);white-space:pre-wrap;display:flex;justify-content:space-between;align-items:center;gap:1rem;cursor:pointer}
-    .content{flex:1}
-    .status-保持{border-left-color:#ffb04c}
-    .status-完了{border-left-color:#4caf50;opacity:.6;text-decoration:line-through}
-    .status-棄却{border-left-color:#f44336;opacity:.6;text-decoration:line-through}
-    .badge{font-size:.8rem;color:#999;margin-right:.5rem}
-    .actions{display:flex;gap:.4rem}
-    .btn{padding:.35rem .9rem;border:none;border-radius:6px;font-size:.8rem;font-weight:bold;color:#fff;cursor:pointer}
-    .btn-done{background:#4caf50}
-    .btn-reject{background:#f44336}
-    a{color:#ff8d8d;text-decoration:none;font-weight:bold}
-  </style>
-</head>
-<body>
-  <h1>投書一覧</h1>
-  <div class="toolbar">
-    <label><input type="checkbox" id="chkInbox"> inbox も表示</label>
-    <a href="/owner.html">◀︎ ダッシュボードへ戻る</a>
-  </div>
-  <ul id="list"></ul>
-
-<script>
-  const $ = (id) => document.getElementById(id);
-  let ownerId = null;
-
-  async function getMe() {
-    const r = await fetch('/api/me');
-    if (!r.ok) { location.href = '/login.html'; return null; }
-    const j = await r.json();
-    ownerId = j.ownerId || j.id || j.uid;
-    return ownerId;
-  }
-
-  function labelFor(status){ return status === '保持' ? '保留' : status; }
-
-  async function load() {
-    const u = new URL(location.href);
-    const withInbox = u.searchParams.get('inbox') === '1';
-    $('chkInbox').checked = withInbox;
-
-    const r = await fetch(`/api/owners/${ownerId}/letters` + (withInbox ? '?inbox=1' : ''));
-    if (!r.ok) {
-      const t = await r.text();
-      alert(`一覧取得エラー: ${r.status}\n${t.slice(0,200)}`);
-      return;
-    }
-    const data = await r.json();
-    const rows = Array.isArray(data) ? data : (data.results || []);
-    const list = $('list');
-    list.innerHTML = '';
-
-    for (const l of rows) {
-      const li = document.createElement('li');
-      li.className = `status-${l.status}`;
-      li.dataset.id = l.id;
-
-      // 左：ステータス + 内容（クリックで詳細へ）
-      const left = document.createElement('div');
-      left.className = 'content';
-      left.innerHTML = `<span class="badge">[${labelFor(l.status)}]</span>${escapeHtml(l.content)}`;
-      li.appendChild(left);
-
-      // 右：アクション（保持のときだけ表示）
-      const actions = document.createElement('div');
-      actions.className = 'actions';
-      if (l.status === '保持') {
-        const bDone = document.createElement('button');
-        bDone.className = 'btn btn-done';
-        bDone.textContent = '完了';
-        bDone.onclick = (e)=>{ e.stopPropagation(); update(l.id, '完了'); };
-
-        const bReject = document.createElement('button');
-        bReject.className = 'btn btn-reject';
-        bReject.textContent = '棄却';
-        bReject.onclick = (e)=>{ e.stopPropagation(); update(l.id, '棄却'); };
-
-        actions.appendChild(bDone);
-        actions.appendChild(bReject);
+  <head>
+    <meta charset="utf-8" />
+    <title>投書一覧</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: "Yu Gothic", sans-serif;
+        background: #fafafa;
+        margin: 0;
+        padding: 1.5rem;
+        color: #333;
       }
-      li.appendChild(actions);
+      h1 {
+        text-align: center;
+        color: #ff8d8d;
+        margin-bottom: 1rem;
+        font-size: 1.6rem;
+      }
+      .toolbar {
+        max-width: 700px;
+        margin: 0 auto 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.9rem;
+      }
+      .back {
+        color: #ff8d8d;
+        font-weight: bold;
+        text-decoration: none;
+      }
+      .inbox-option {
+        color: #666;
+      }
+      ul {
+        list-style: none;
+        padding: 0;
+        max-width: 700px;
+        margin: 0 auto;
+      }
+      li {
+        background: #fff;
+        border-left: 6px solid #ff8d8d;
+        margin-bottom: 1rem;
+        padding: 1rem 1.2rem;
+        border-radius: 0.8rem;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+        white-space: pre-wrap;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+      }
+      .status-保持 {
+        border-left-color: #ffb04c;
+      }
+      .status-完了 {
+        border-left-color: #4caf50;
+        opacity: 0.6;
+        text-decoration: line-through;
+      }
+      .status-棄却 {
+        border-left-color: #f44336;
+        opacity: 0.6;
+        text-decoration: line-through;
+      }
+      .badge {
+        font-size: 0.8rem;
+        color: #999;
+        margin-right: 0.5rem;
+      }
+      .btn {
+        padding: 0.3rem 0.9rem;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        color: #fff;
+        cursor: pointer;
+      }
+      .btn-done {
+        background: #4caf50;
+      }
+      .btn-reject {
+        background: #f44336;
+      }
+      a {
+        color: #ff8d8d;
+        text-decoration: none;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>投書一覧</h1>
 
-      // 行クリックで詳細へ
-      li.onclick = () => { location.href = `/letter.html?id=${l.id}`; };
+    <!-- 位置を入れ替え：左が戻る、右が inbox -->
+    <div class="toolbar">
+      <a href="/owner.html" class="back">◀︎ ダッシュボードへ戻る</a>
+      <label id="inboxWrap" class="inbox-option" style="display: none">
+        <input type="checkbox" id="chkInbox" /> inbox も表示
+      </label>
+    </div>
 
-      list.appendChild(li);
-    }
-  }
+    <ul id="list"></ul>
 
-  // 文字列エスケープ（内容表示用）
-  function escapeHtml(s){ return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    <script>
+      const $ = (id) => document.getElementById(id);
 
-  async function update(id, status){
-    const r = await fetch(`/api/owners/${ownerId}/letters/${id}/status`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ status })
-    });
-    if (!r.ok){
-      const t = await r.text();
-      alert(`更新失敗: ${r.status}\n${t.slice(0,200)}`);
-      return;
-    }
-    load();
-  }
+      let ownerId = "";
+      let canSeeInbox = false; // noshi だけ true
 
-  $('chkInbox').addEventListener('change', (e)=>{
-    const u = new URL(location.href);
-    if (e.target.checked) u.searchParams.set('inbox','1');
-    else u.searchParams.delete('inbox');
-    location.href = u.toString();
-  });
+      async function boot() {
+        // 認証＆オーナーID取得
+        const r = await fetch("/api/me");
+        if (!r.ok) {
+          location.href = "/login.html";
+          return;
+        }
+        const me = await r.json();
+        ownerId = me.ownerId || me.id;
+        canSeeInbox = ownerId === "noshi";
 
-  (async()=>{ if(await getMe()) load(); })();
-</script>
-</body>
+        // noshi のときだけ、チェックボックスを表示・同期
+        if (canSeeInbox) {
+          $("inboxWrap").style.display = "inline-block";
+
+          // URL パラメータから初期値
+          const qs = new URL(location.href).searchParams;
+          $("chkInbox").checked = qs.get("inbox") === "1";
+
+          // チェンジ → URL も同期 → 再読込
+          $("chkInbox").addEventListener("change", () => {
+            const u = new URL(location.href);
+            if ($("chkInbox").checked) u.searchParams.set("inbox", "1");
+            else u.searchParams.delete("inbox");
+            history.replaceState(null, "", u);
+            load();
+          });
+        } else {
+          // noshi 以外は URL の ?inbox=1 を無視して削除
+          const u = new URL(location.href);
+          if (u.searchParams.has("inbox")) {
+            u.searchParams.delete("inbox");
+            history.replaceState(null, "", u);
+          }
+        }
+
+        load();
+      }
+
+      async function load() {
+        const withInbox = canSeeInbox && $("chkInbox").checked;
+        let url = `/api/owners/${ownerId}/letters`;
+        if (withInbox) url += "?inbox=1";
+
+        const r = await fetch(url);
+        if (!r.ok) {
+          const t = await r.text();
+          alert(`一覧取得エラー: ${r.status}\n${t.slice(0, 200)}`);
+          return;
+        }
+        const data = await r.json();
+        const rows = Array.isArray(data) ? data : data.results;
+
+        const list = $("list");
+        list.innerHTML = "";
+
+        for (const l of rows) {
+          const li = document.createElement("li");
+          const label = l.status === "保持" ? "保留" : l.status;
+          li.className = "status-" + l.status;
+
+          const left = document.createElement("div");
+          left.innerHTML = `<span class="badge">[${label}]</span>${escapeHtml(
+            l.content
+          )}`;
+          li.appendChild(left);
+
+          // クリックで単体ページ（誰でも閲覧可）
+          li.style.cursor = "pointer";
+          li.onclick = () => (location.href = `/letter.html?id=${l.id}`);
+
+          // 必要なら各行に「完了/棄却」ボタンを足す場合はここで追加できます
+          list.appendChild(li);
+        }
+      }
+
+      // 簡易エスケープ
+      function escapeHtml(s) {
+        return s.replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            }[c])
+        );
+      }
+
+      boot();
+    </script>
+  </body>
 </html>
