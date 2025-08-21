@@ -104,6 +104,19 @@
       .toplink a {
         text-decoration: none;
       }
+
+      /* すべての要素の幅計算を border-box に */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      /* 念のための保険 */
+      textarea {
+        width: 100%;
+        max-width: 100%;
+      }
     </style>
   </head>
   <body>
@@ -121,7 +134,7 @@
         <textarea
           id="content"
           maxlength="200"
-          placeholder="200文字まででお題を送れます"
+          placeholder="200文字まででやってほしいことを送れます"
           required
         ></textarea>
         <div class="actions">
