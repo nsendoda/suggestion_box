@@ -41,41 +41,61 @@
     <div class="toplink"><a href="/">◀ トップへ戻る</a></div>
   </div>
 
-  <script>
-    const qs = new URLSearchParams(location.search)
-    const ownerId = (qs.get('o') || '').trim()
-    const $ = (id) => document.getElementById(id)
+<script>
+  const qs = new URLSearchParams(location.search);
+  const ownerId = (qs.get('o') || '').trim().toLowerCase();
+  const $ = (id) => document.getElementById(id);
 
+  async function ensureOwner() {
     if (!ownerId) {
-      $('err').hidden = false
-    } else {
-      $('form').hidden = false
-      $('targetLabel').textContent = `宛先：@${ownerId} さん`
-      $('send').onclick = async () => {
-        const content = $('content').value.trim()
-        if (!content) return
-        $('send').disabled = true
-        $('status').textContent = '送信中…'
-        try {
-          const r = await fetch(`/api/owners/${encodeURIComponent(ownerId)}/letters`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content })
-          })
-          if (!r.ok) {
-            $('status').textContent = '送信に失敗しました'
-            $('send').disabled = false
-            return
-          }
-          $('content').value = ''
-          $('status').textContent = '送信しました！'
-        } catch (e) {
-          $('status').textContent = 'ネットワークエラー'
-        } finally {
-          setTimeout(() => { $('status').textContent = ''; $('send').disabled = false }, 1200)
-        }
-      }
+      $('err').hidden = false;
+      return null;
     }
-  </script>
+    const r = await fetch(`/api/owners/${encodeURIComponent(ownerId)}/profile`);
+    if (!r.ok) {
+      // 存在しない → エラー表示＆フォームは出さない
+      $('err').hidden = false;
+      $('err').innerHTML = `箱（ユーザーID <code>@${ownerId}</code>）は存在しません。<div class="toplink"><a href="/">◀ トップへ戻る</a></div>`;
+      return null;
+    }
+    const info = await r.json();
+    $('form').hidden = false;
+    $('targetLabel').textContent = `宛先：@${info.displayName || info.id} さん`;
+    return info;
+  }
+
+  async function main() {
+    const info = await ensureOwner();
+    if (!info) return;
+
+    $('send').onclick = async () => {
+      const content = $('content').value.trim();
+      if (!content) return;
+      $('send').disabled = true;
+      $('status').textContent = '送信中…';
+      try {
+        const r = await fetch(`/api/owners/${encodeURIComponent(ownerId)}/letters`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content }),
+        });
+        if (!r.ok) {
+          $('status').textContent = '送信に失敗しました';
+          $('send').disabled = false;
+          return;
+        }
+        $('content').value = '';
+        $('status').textContent = '送信しました！';
+      } catch (e) {
+        $('status').textContent = 'ネットワークエラー';
+      } finally {
+        setTimeout(() => { $('status').textContent = ''; $('send').disabled = false }, 1200);
+      }
+    };
+  }
+
+  main();
+</script>
+
 </body>
 </html>
