@@ -1,206 +1,321 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>オーナーダッシュボード</title>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>オーナーダッシュボード</title>
 
-  <!-- テーマ（前回の #ネガハピ CSS） -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Potta+One&family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/negahapi.css">
-  <style>
-    /* ちょい足し */
-    .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .spacer{flex:1}
-    .close{x:-}
-    .close{background:transparent;border:none;color:#aaa;font-size:14px;cursor:pointer}
-    .close:hover{color:#fff;text-decoration:underline}
-  </style>
-</head>
-<body>
-  <header class="nav">
-    <div class="brand">ネガティヴハッピィ<span class="sub"> 投書箱</span></div>
-    <div class="toolbar">
-      <button id="copyLink" class="btn btn-ghost" title="自分の投書ページURLをコピー">投書ページURLをコピー</button>
-    </div>
-  </header>
-
-  <main class="wrap">
-    <h1>オーナーダッシュボード</h1>
-    <div class="toolbar" style="margin:12px 0 20px">
-      <button id="draw" class="btn btn-contrast">投書箱から一枚引く</button>
-      <span class="hint">上限に達していると引けません</span>
-      <span class="spacer"></span>
-      <a class="btn btn-ghost" href="/owner/list">一覧を見る</a>
-    </div>
-
-    <!-- 引いたカード -->
-    <section id="drawn" class="card floaty" style="display:none; margin:10px 0 16px">
-      <div class="meta">
-        <span id="statusBadge" class="badge keep">保留中</span>
-        <span class="hint" id="drawnTime"></span>
-      </div>
-      <div id="drawnContent" style="white-space:pre-wrap; font-size:16px; margin-top:8px"></div>
-      <div class="actions" style="margin-top:12px">
-        <button class="btn btn-contrast" id="btnDone">完了</button>
-        <button class="btn btn-primary" id="btnHold">保留</button>
-        <button class="btn btn-ghost" id="btnDrop">棄却</button>
-        <button class="close" id="btnClose" title="閉じる（保留のまま）">× とじる</button>
-      </div>
-    </section>
-
-    <div id="toast" class="hint"></div>
-  </main>
-
-  <script>
-    // ===== ユーティリティ =====
-    const $ = (id) => document.getElementById(id)
-    let ownerId = null
-    let currentId = null
-    let confettiShown = false  // ページ内で最初の一回だけクラッカー
-
-    async function getMe(){
-      const r = await fetch('/api/me')
-      if(!r.ok){ location.href='/login.html'; return }
-      const { ownerId: me } = await r.json()
-      ownerId = me
-      return me
-    }
-
-    function showToast(msg, ms=1400){
-      const t = $('toast')
-      t.textContent = msg
-      setTimeout(()=>{ t.textContent='' }, ms)
-    }
-
-    // ===== URLコピー =====
-    async function copyMyBoxUrl(){
-      const url = `${location.origin}/box.html?o=${encodeURIComponent(ownerId)}`
-      try{
-        await navigator.clipboard.writeText(url)
-        showToast('URLをコピーしました')
-      }catch{
-        // フォールバック
-        const ta = document.createElement('textarea')
-        ta.value = url; document.body.appendChild(ta); ta.select()
-        document.execCommand('copy'); ta.remove()
-        showToast('URLをコピーしました')
+    <!-- テーマ（前回の #ネガハピ CSS） -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Potta+One&family=Zen+Maru+Gothic:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/negahapi.css" />
+    <style>
+      /* ちょい足し */
+      .toolbar {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
       }
-    }
+      .spacer {
+        flex: 1;
+      }
+      .close {
+        x: -;
+      }
+      .close {
+        background: transparent;
+        border: none;
+        color: #aaa;
+        font-size: 14px;
+        cursor: pointer;
+      }
+      .close:hover {
+        color: #fff;
+        text-decoration: underline;
+      }
 
-    // ===== クラッカー（軽量コンフェッティ） =====
-    function launchConfetti(duration=1600, count=120){
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')
-      const dpr = window.devicePixelRatio || 1
-      let w = innerWidth, h = innerHeight
-      canvas.style.cssText = 'position:fixed;inset:0;z-index:9999;pointer-events:none'
-      canvas.width = w*dpr; canvas.height = h*dpr; ctx.scale(dpr,dpr)
-      document.body.appendChild(canvas)
+      /* でかボタン + 祝祭感 */
+      .btn-giant {
+        font-size: clamp(18px, 2.2vw + 8px, 28px);
+        padding: 18px 30px;
+        border-radius: 9999px;
+        background: linear-gradient(135deg, #ff6aa9, #ff8d8d, #ffb86c);
+        color: #fff;
+        box-shadow: 0 14px 34px rgba(255, 110, 150, 0.35);
+        letter-spacing: 0.04em;
+        position: relative;
+        overflow: hidden;
+        transform: translateZ(0); /* GPU */
+        animation: ringPulse 2.4s ease-in-out infinite;
+      }
+      .btn-giant:hover {
+        transform: translateY(-1px) scale(1.02);
+      }
+      .btn-giant:active {
+        transform: translateY(1px) scale(0.99);
+      }
+      .btn-giant:disabled {
+        opacity: 0.65;
+        cursor: progress;
+        filter: saturate(0.6);
+      }
 
-      const colors = ['#ff2e92','#b8ff3e','#7af0ff','#ffffff']
-      const P = Array.from({length: count}, () => ({
-        x: Math.random()*w,
-        y: -20 - Math.random()*h*0.2,
-        vx: (Math.random()-0.5)*3,
-        vy: 2 + Math.random()*3,
-        size: 4 + Math.random()*6,
-        rot: Math.random()*Math.PI,
-        vr: (Math.random()-0.5)*0.2,
-        color: colors[Math.floor(Math.random()*colors.length)],
-        life: 1
-      }))
+      .btn-giant .ico {
+        margin-right: 0.5em;
+        filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.15));
+      }
 
-      const start = performance.now()
-      const g = ctx.createLinearGradient(0,0,0,h)
-      g.addColorStop(0,'rgba(255,255,255,.2)')
-      g.addColorStop(1,'transparent')
-
-      function tick(t){
-        const dt = 16/1000
-        const elapsed = t - start
-        ctx.clearRect(0,0,w,h)
-        ctx.fillStyle = g; ctx.fillRect(0,0,w,h*0.15)
-
-        for(const p of P){
-          p.vy += 0.04
-          p.x += p.vx; p.y += p.vy
-          p.rot += p.vr
-          if(elapsed > duration*0.6) p.life -= 0.02
-          ctx.save()
-          ctx.globalAlpha = Math.max(p.life, 0)
-          ctx.translate(p.x, p.y)
-          ctx.rotate(p.rot)
-          ctx.fillStyle = p.color
-          ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size)
-          ctx.restore()
+      @keyframes ringPulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(255, 141, 141, 0.55);
         }
-        if(elapsed < duration && P.some(p=>p.life>0 && p.y<h+20)){
-          requestAnimationFrame(tick)
-        }else{
-          canvas.remove()
+        70% {
+          box-shadow: 0 0 0 22px rgba(255, 141, 141, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(255, 141, 141, 0);
         }
       }
-      requestAnimationFrame(tick)
-    }
+    </style>
+  </head>
+  <body>
+    <header class="nav">
+      <div class="brand">
+        ネガティヴハッピィ<span class="sub"> 投書箱</span>
+      </div>
+      <div class="toolbar">
+        <button
+          id="copyLink"
+          class="btn btn-ghost"
+          title="自分の投書ページURLをコピー"
+        >
+          投書ページURLをコピー
+        </button>
+      </div>
+    </header>
 
-    // ===== 動作 =====
-    $('draw').onclick = async () => {
-      const res = await fetch(`/api/owners/${ownerId}/draw`, { method:'POST' })
-      if(!res.ok){
-        const txt = await res.text()
-        alert(`引けませんでした：${res.status}\n${txt.slice(0,200)}`)
-        return
+    <main class="wrap">
+      <h1>オーナーダッシュボード</h1>
+      <div class="toolbar" style="margin: 12px 0 20px">
+        <button id="draw" class="btn btn-contrast btn-giant">
+          <span class="ico">🎉</span> 投書箱から一枚引く
+        </button>
+        <span class="hint">上限に達していると引けません</span>
+        <span class="spacer"></span>
+        <a class="btn btn-ghost" href="/owner/list">一覧を見る</a>
+      </div>
+
+      <!-- 引いたカード -->
+      <section
+        id="drawn"
+        class="card floaty"
+        style="display: none; margin: 10px 0 16px"
+      >
+        <div class="meta">
+          <span id="statusBadge" class="badge keep">保留中</span>
+          <span class="hint" id="drawnTime"></span>
+        </div>
+        <div
+          id="drawnContent"
+          style="white-space: pre-wrap; font-size: 16px; margin-top: 8px"
+        ></div>
+        <div class="actions" style="margin-top: 12px">
+          <button class="btn btn-contrast" id="btnDone">完了</button>
+          <button class="btn btn-primary" id="btnHold">保留</button>
+          <button class="btn btn-ghost" id="btnDrop">棄却</button>
+          <button class="close" id="btnClose" title="閉じる（保留のまま）">
+            × とじる
+          </button>
+        </div>
+      </section>
+
+      <div id="toast" class="hint"></div>
+    </main>
+
+    <script>
+      // ===== ユーティリティ =====
+      const $ = (id) => document.getElementById(id);
+      let ownerId = null;
+      let currentId = null;
+      let confettiShown = false; // ページ内で最初の一回だけクラッカー
+
+      async function getMe() {
+        const r = await fetch("/api/me");
+        if (!r.ok) {
+          location.href = "/login.html";
+          return;
+        }
+        const { ownerId: me } = await r.json();
+        ownerId = me;
+        return me;
       }
-      const data = await res.json()
-      currentId = data.id
-      $('drawnContent').textContent = data.content
-      $('statusBadge').textContent = '保留中'  // DB値は「保持」だが表示は「保留」
-      $('drawnTime').textContent = new Date().toLocaleString()
-      $('drawn').style.display = 'block'
 
-      if(!confettiShown){
-        launchConfetti()
-        confettiShown = true
+      function showToast(msg, ms = 1400) {
+        const t = $("toast");
+        t.textContent = msg;
+        setTimeout(() => {
+          t.textContent = "";
+        }, ms);
       }
-    }
 
-    // 3つのボタン
-    $('btnDone').onclick = () => updateCurrent('完了')
-    $('btnDrop').onclick = () => updateCurrent('棄却')
-    $('btnHold').onclick = () => updateCurrent('保留') // 表示は保留、APIは「保持」に変換
-
-    async function updateCurrent(label){
-      if(!currentId) return
-      const apiStatus = (label === '保留') ? '保持' : label  // APIは「保持」
-      const res = await fetch(`/api/owners/${ownerId}/letters/${currentId}/status`, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ status: apiStatus })
-      })
-      if(!res.ok){
-        const txt = await res.text()
-        alert(`更新失敗：${res.status}\n${txt.slice(0,200)}`)
-        return
+      // ===== URLコピー =====
+      async function copyMyBoxUrl() {
+        const url = `${location.origin}/box.html?o=${encodeURIComponent(
+          ownerId
+        )}`;
+        try {
+          await navigator.clipboard.writeText(url);
+          showToast("URLをコピーしました");
+        } catch {
+          // フォールバック
+          const ta = document.createElement("textarea");
+          ta.value = url;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          ta.remove();
+          showToast("URLをコピーしました");
+        }
       }
-      showToast(`${label}にしました`)
-      $('drawn').style.display = 'none'
-      currentId = null
-    }
 
-    // とじる（API呼ばない＝保留のまま）
-    $('btnClose').onclick = ()=>{
-      $('drawn').style.display='none'
-      showToast('保留のまま閉じました')
-    }
+      // ===== クラッカー（軽量コンフェッティ） =====
+      function launchConfetti(duration = 1600, count = 120) {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        const dpr = window.devicePixelRatio || 1;
+        let w = innerWidth,
+          h = innerHeight;
+        canvas.style.cssText =
+          "position:fixed;inset:0;z-index:9999;pointer-events:none";
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        ctx.scale(dpr, dpr);
+        document.body.appendChild(canvas);
 
-    // 初期化
-    (async ()=>{
-      await getMe()
-      $('copyLink').onclick = copyMyBoxUrl
-    })()
-  </script>
-</body>
+        const colors = ["#ff2e92", "#b8ff3e", "#7af0ff", "#ffffff"];
+        const P = Array.from({ length: count }, () => ({
+          x: Math.random() * w,
+          y: -20 - Math.random() * h * 0.2,
+          vx: (Math.random() - 0.5) * 3,
+          vy: 2 + Math.random() * 3,
+          size: 4 + Math.random() * 6,
+          rot: Math.random() * Math.PI,
+          vr: (Math.random() - 0.5) * 0.2,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          life: 1,
+        }));
+
+        const start = performance.now();
+        const g = ctx.createLinearGradient(0, 0, 0, h);
+        g.addColorStop(0, "rgba(255,255,255,.2)");
+        g.addColorStop(1, "transparent");
+
+        function tick(t) {
+          const dt = 16 / 1000;
+          const elapsed = t - start;
+          ctx.clearRect(0, 0, w, h);
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, w, h * 0.15);
+
+          for (const p of P) {
+            p.vy += 0.04;
+            p.x += p.vx;
+            p.y += p.vy;
+            p.rot += p.vr;
+            if (elapsed > duration * 0.6) p.life -= 0.02;
+            ctx.save();
+            ctx.globalAlpha = Math.max(p.life, 0);
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rot);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+            ctx.restore();
+          }
+          if (elapsed < duration && P.some((p) => p.life > 0 && p.y < h + 20)) {
+            requestAnimationFrame(tick);
+          } else {
+            canvas.remove();
+          }
+        }
+        requestAnimationFrame(tick);
+      }
+
+      // ===== 動作 =====
+
+      let drawing = false;
+
+      $("draw").onclick = async () => {
+        if (drawing) return;
+        drawing = true;
+        const btn = $("draw");
+        btn.disabled = true;
+
+        try {
+          const res = await fetch(`/api/owners/${ownerId}/draw`, {
+            method: "POST",
+          });
+          if (!res.ok) {
+            const txt = await res.text();
+            alert(`引けませんでした：${res.status}\n${txt.slice(0, 200)}`);
+            return;
+          }
+          const data = await res.json();
+          currentId = data.id;
+          $("drawnContent").textContent = data.content;
+          $("statusBadge").textContent = "保留中";
+          $("drawnTime").textContent = new Date().toLocaleString();
+          $("drawn").style.display = "block";
+
+          // ★毎回ド派手に
+          megaConfetti();
+        } finally {
+          drawing = false;
+          btn.disabled = false;
+        }
+      };
+
+      // 3つのボタン
+      $("btnDone").onclick = () => updateCurrent("完了");
+      $("btnDrop").onclick = () => updateCurrent("棄却");
+      $("btnHold").onclick = () => updateCurrent("保留"); // 表示は保留、APIは「保持」に変換
+
+      async function updateCurrent(label) {
+        if (!currentId) return;
+        const apiStatus = label === "保留" ? "保持" : label; // APIは「保持」
+        const res = await fetch(
+          `/api/owners/${ownerId}/letters/${currentId}/status`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: apiStatus }),
+          }
+        );
+        if (!res.ok) {
+          const txt = await res.text();
+          alert(`更新失敗：${res.status}\n${txt.slice(0, 200)}`);
+          return;
+        }
+        showToast(`${label}にしました`);
+        $("drawn").style.display = "none";
+        currentId = null;
+      }
+
+      // とじる（API呼ばない＝保留のまま）
+      $("btnClose").onclick = () => {
+        $("drawn").style.display = "none";
+        showToast("保留のまま閉じました");
+      };
+
+      // 初期化
+      (async () => {
+        await getMe();
+        $("copyLink").onclick = copyMyBoxUrl;
+      })();
+    </script>
+  </body>
 </html>
