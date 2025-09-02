@@ -94,11 +94,12 @@
     </style>
   </head>
   <body>
-    <h1>投書一覧</h1>
+    <h1 id="title">投書一覧</h1>
 
-    <!-- 位置を入れ替え：左が戻る、右が inbox -->
     <div class="toolbar">
-      <a href="/owner.html" class="back">◀︎ ダッシュボードへ戻る</a>
+      <a id="backLink" href="/owner.html" class="back"
+        >◀︎ ダッシュボードへ戻る</a
+      >
       <label id="inboxWrap" class="inbox-option" style="display: none">
         <input type="checkbox" id="chkInbox" /> inbox も表示
       </label>
@@ -109,29 +110,57 @@
     <script>
       const $ = (id) => document.getElementById(id);
 
-      let ownerId = "";
-      let canSeeInbox = false; // noshi だけ true
+      // ?o=ownerId があればその人の一覧。無ければ自分の一覧。
+      const qs = new URLSearchParams(location.search);
+      let targetOwner = qs.get("o") || ""; // 公開閲覧で使う
+      let meId = null;
 
       async function boot() {
-        // 認証＆オーナーID取得
-        const r = await fetch("/api/me");
-        if (!r.ok) {
-          location.href = "/login.html";
+        // 自分情報（未ログインOK）
+        try {
+          const r = await fetch("/api/me");
+          if (r.ok) {
+            const me = await r.json();
+            meId = me.ownerId || me.id || null;
+          }
+        } catch {}
+
+        if (!targetOwner) targetOwner = meId || ""; // パラメータ無ければ自分。未ログインなら空のまま
+
+        if (!targetOwner) {
+          // 未ログインかつ ?o なし
+          $("title").textContent = "投書一覧";
+          $("list").innerHTML =
+            "<li>閲覧するユーザーが指定されていません。</li>";
+          $("backLink").style.display = "none";
           return;
         }
-        const me = await r.json();
-        ownerId = me.ownerId || me.id;
-        canSeeInbox = ownerId === "noshi";
 
-        // noshi のときだけ、チェックボックスを表示・同期
+        // 表示名（なければ @id）
+        let display = "@" + targetOwner;
+        try {
+          const pr = await fetch(
+            `/api/owners/${encodeURIComponent(targetOwner)}/profile`
+          );
+          if (pr.ok) {
+            const p = await pr.json();
+            if (p.displayName) display = p.displayName;
+          }
+        } catch {}
+        $("title").textContent = `${display} さんの投書一覧`;
+        document.title = `${display}さんの投書一覧`;
+
+        // 本人か？
+        const isSelf = !!meId && meId === targetOwner;
+
+        // 戻るリンクは本人のみ表示
+        $("backLink").style.display = isSelf ? "inline" : "none";
+
+        // inbox は noshi 本人だけ
+        const canSeeInbox = isSelf && meId === "noshi";
         if (canSeeInbox) {
           $("inboxWrap").style.display = "inline-block";
-
-          // URL パラメータから初期値
-          const qs = new URL(location.href).searchParams;
           $("chkInbox").checked = qs.get("inbox") === "1";
-
-          // チェンジ → URL も同期 → 再読込
           $("chkInbox").addEventListener("change", () => {
             const u = new URL(location.href);
             if ($("chkInbox").checked) u.searchParams.set("inbox", "1");
@@ -140,7 +169,8 @@
             load();
           });
         } else {
-          // noshi 以外は URL の ?inbox=1 を無視して削除
+          $("inboxWrap").style.display = "none";
+          // 他人の時は ?inbox を無視してURLからも消す
           const u = new URL(location.href);
           if (u.searchParams.has("inbox")) {
             u.searchParams.delete("inbox");
@@ -152,8 +182,9 @@
       }
 
       async function load() {
-        const withInbox = canSeeInbox && $("chkInbox").checked;
-        let url = `/api/owners/${ownerId}/letters`;
+        const withInbox =
+          $("inboxWrap").style.display !== "none" && $("chkInbox").checked;
+        let url = `/api/owners/${encodeURIComponent(targetOwner)}/letters`;
         if (withInbox) url += "?inbox=1";
 
         const r = await fetch(url);
@@ -179,16 +210,14 @@
           )}`;
           li.appendChild(left);
 
-          // クリックで単体ページ（誰でも閲覧可）
+          // クリックで投書単体へ
           li.style.cursor = "pointer";
           li.onclick = () => (location.href = `/letter.html?id=${l.id}`);
 
-          // 必要なら各行に「完了/棄却」ボタンを足す場合はここで追加できます
           list.appendChild(li);
         }
       }
 
-      // 簡易エスケープ
       function escapeHtml(s) {
         return s.replace(
           /[&<>"']/g,

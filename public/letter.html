@@ -124,7 +124,11 @@
       <div class="card">
         <div class="meta">
           <span id="badge" class="badge keep">保留</span>
-          <span id="owner"></span>
+          <a
+            id="ownerLink"
+            href="#"
+            style="color: var(--pink); text-decoration: none"
+          ></a>
           <span id="time" style="margin-left: auto"></span>
         </div>
 
@@ -185,7 +189,10 @@
         if (!letter) return;
 
         setBadge(letter.status);
-        $("owner").textContent = `@${letter.owner_id}`;
+        const link = $("ownerLink");
+        link.textContent = `@${letter.owner_id}`;
+        link.href = `/owner/list?o=${encodeURIComponent(letter.owner_id)}`;
+
         $("time").textContent = new Date(
           letter.updated_at || letter.created_at
         ).toLocaleString();
