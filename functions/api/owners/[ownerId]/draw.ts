@@ -6,11 +6,11 @@ export const onRequestPost: PagesFunction<Env> = async ({ env, params }) => {
   try {
     const ownerId = String((params as any).ownerId);
 
-    // 1) 保留(=保持)の枚数を確認
+    // 保持(=保留)＋進行中 の合計で判定
     const kept =
       (
         await env.DB.prepare(
-          'SELECT count(*) AS cnt FROM letters WHERE owner_id=? AND status="保持"'
+          'SELECT count(*) AS cnt FROM letters WHERE owner_id=? AND status IN ("保持","進行中")'
         )
           .bind(ownerId)
           .first<{ cnt: number }>()

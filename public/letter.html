@@ -61,10 +61,10 @@
         font-weight: 700;
         cursor: pointer;
       }
-      .btn-done {
+      .btn-aDone {
         background: #4caf50;
       }
-      .btn-reject {
+      .btn-aReject {
         background: #f44336;
       }
       a {
@@ -89,8 +89,10 @@
         </div>
         <div id="content" class="content">読み込み中…</div>
         <div id="ownerActions" class="actions" style="display: none">
-          <button id="done" class="btn btn-done">完了</button>
-          <button id="reject" class="btn btn-reject">棄却</button>
+          <button id="aDone" class="btn">完了</button>
+          <button id="aProgress" class="btn">進行中</button>
+          <button id="aHold" class="btn">保留</button>
+          <button id="aReject" class="btn">棄却</button>
         </div>
       </div>
     </div>
@@ -136,7 +138,9 @@
         const canOperate =
           !!me && (me.ownerId === letter.owner_id || me.id === letter.owner_id);
         $("ownerActions").style.display =
-          canOperate && letter.status === "保持" ? "flex" : "none";
+          canOperate && (letter.status === "保持" || letter.status === "進行中")
+            ? "flex"
+            : "none";
         if (canOperate) {
           $("ownerNav").hidden = false;
         } else {
@@ -167,8 +171,10 @@
         refresh();
       }
 
-      $("done").onclick = () => update("完了");
-      $("reject").onclick = () => update("棄却");
+      $("aDone").onclick = () => update("完了");
+      $("aReject").onclick = () => update("棄却");
+      $("aProgress").onclick = () => update("進行中");
+      $("aHold").onclick = () => update("保持");
 
       if (!id) {
         $("content").textContent = "id が不正です";
