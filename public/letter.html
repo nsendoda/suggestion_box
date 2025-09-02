@@ -77,41 +77,79 @@
         font-size: 1.06rem;
       }
 
+      /* アクション行 */
       .actions {
         margin-top: 14px;
         display: flex;
-        gap: 10px;
+        gap: 8px;
         flex-wrap: wrap;
       }
+
+      /* ベース：フラット & 枠線のみ（共通） */
       .btn {
-        border: none;
+        appearance: none;
+        background: #fff; /* 塗りなしに近い白 */
+        color: #334;
+        border: 1.5px solid #e6e6e6; /* 薄い枠線 */
         border-radius: 10px;
-        padding: 0.56rem 1rem;
-        color: #fff;
-        font-weight: 800;
+        padding: 8px 12px; /* 少しコンパクトに */
+        font-weight: 700;
         cursor: pointer;
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
-        transition: 0.15s transform ease, 0.15s filter ease, 0.15s opacity ease;
+        transition: background 0.15s ease, border-color 0.15s ease,
+          transform 0.05s ease;
       }
-      .btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-        filter: saturate(0.6);
-      }
+
+      /* ホバー時はうっすら色づけ、クリックでほんの少し沈む */
       .btn:hover {
         transform: translateY(-1px);
       }
+      .btn:active {
+        transform: translateY(0);
+      }
+
+      /* フォーカスリング（アクセント色に追従） */
+      .btn:focus-visible {
+        outline: 3px solid color-mix(in srgb, currentColor 35%, transparent);
+        outline-offset: 2px;
+      }
+
+      /* 無効 */
+      .btn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      /* 各バリアント（枠線＋文字色だけ変える → 落ち着いた印象） */
       #aDone {
-        background: linear-gradient(135deg, #43b36b, #2e7d32);
+        color: #2e7d32; /* 緑 */
+        border-color: #a6d5b0;
       }
+      #aDone:hover {
+        background: rgba(46, 125, 50, 0.08);
+      }
+
       #aProgress {
-        background: linear-gradient(135deg, #6a8dff, #7a5cff);
+        color: #3a57b7; /* 青（letter.html の「進行中」と合わせる） */
+        border-color: #b8c6ff;
       }
+      #aProgress:hover {
+        background: rgba(58, 87, 183, 0.08);
+      }
+
       #aHold {
-        background: linear-gradient(135deg, #ffb659, #ff9800);
+        color: #a06000; /* 保留＝アンバー */
+        border-color: #ffd99f;
       }
+      #aHold:hover {
+        background: rgba(160, 96, 0, 0.08);
+      }
+
       #aReject {
-        background: linear-gradient(135deg, #ff6a6a, #e53935);
+        color: #c62828; /* 赤 */
+        border-color: #ffb3b3;
+      }
+      #aReject:hover {
+        background: rgba(198, 40, 40, 0.08);
       }
     </style>
   </head>
