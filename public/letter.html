@@ -87,69 +87,32 @@
 
       /* ベース：フラット & 枠線のみ（共通） */
       .btn {
-        appearance: none;
-        background: #fff; /* 塗りなしに近い白 */
-        color: #334;
-        border: 1.5px solid #e6e6e6; /* 薄い枠線 */
-        border-radius: 10px;
-        padding: 8px 12px; /* 少しコンパクトに */
+        border: none;
+        border-radius: 8px;
+        padding: 0.5rem 0.9rem;
+        color: #fff;
         font-weight: 700;
         cursor: pointer;
-        transition: background 0.15s ease, border-color 0.15s ease,
-          transform 0.05s ease;
       }
-
-      /* ホバー時はうっすら色づけ、クリックでほんの少し沈む */
-      .btn:hover {
-        transform: translateY(-1px);
+      .btn-aDone {
+        background: #4caf50;
       }
-      .btn:active {
-        transform: translateY(0);
+      .btn-aReject {
+        background: #f44336;
       }
-
-      /* フォーカスリング（アクセント色に追従） */
-      .btn:focus-visible {
-        outline: 3px solid color-mix(in srgb, currentColor 35%, transparent);
-        outline-offset: 2px;
+      .btn-aHold {
+        /* 保留(=保持) = オレンジ */
+        background: #ff9800;
+      }
+      .btn-aProgress {
+        /* 進行中 = ブルー */
+        background: #3f51b5;
       }
 
       /* 無効 */
       .btn:disabled {
         opacity: 0.55;
         cursor: not-allowed;
-      }
-
-      /* 各バリアント（枠線＋文字色だけ変える → 落ち着いた印象） */
-      #aDone {
-        color: #2e7d32; /* 緑 */
-        border-color: #a6d5b0;
-      }
-      #aDone:hover {
-        background: rgba(46, 125, 50, 0.08);
-      }
-
-      #aProgress {
-        color: #3a57b7; /* 青（letter.html の「進行中」と合わせる） */
-        border-color: #b8c6ff;
-      }
-      #aProgress:hover {
-        background: rgba(58, 87, 183, 0.08);
-      }
-
-      #aHold {
-        color: #a06000; /* 保留＝アンバー */
-        border-color: #ffd99f;
-      }
-      #aHold:hover {
-        background: rgba(160, 96, 0, 0.08);
-      }
-
-      #aReject {
-        color: #c62828; /* 赤 */
-        border-color: #ffb3b3;
-      }
-      #aReject:hover {
-        background: rgba(198, 40, 40, 0.08);
       }
     </style>
   </head>
@@ -174,10 +137,10 @@
 
         <!-- 本人 & 「保持/進行中」時のみ表示 -->
         <div id="ownerActions" class="actions" style="display: none">
-          <button id="aDone" class="btn">完了</button>
-          <button id="aProgress" class="btn">進行中</button>
-          <button id="aHold" class="btn">保留</button>
-          <button id="aReject" class="btn">棄却</button>
+          <button id="aDone" class="btn btn-aDone">完了</button>
+          <button id="aProgress" class="btn btn-aProgress">進行中</button>
+          <button id="aHold" class="btn btn-aHold">保留</button>
+          <button id="aReject" class="btn btn-aReject">棄却</button>
         </div>
       </div>
     </div>
