@@ -22,14 +22,16 @@
         max-width: 700px;
         margin: 0 auto 1rem;
         display: flex;
-        justify-content: space-between;
         align-items: center;
+        gap: 14px; /* お好みで */
         font-size: 0.9rem;
       }
+
       .right {
+        margin-left: auto;
         display: flex;
         align-items: center;
-        gap: 14px; /* 右側の並びの余白 */
+        gap: 14px;
       }
       .back {
         color: #ff8d8d;
@@ -57,6 +59,15 @@
         justify-content: space-between;
         align-items: center;
         gap: 1rem;
+      }
+      .status-進行中 {
+        border-left-color: #6a8dff;
+        /* 
+  background: linear-gradient(90deg, rgba(106,141,255,.06), transparent);
+  */
+      }
+      .status-進行中 .badge {
+        color: #3a57b7; /* ステータス文字色も青系に */
       }
       .status-保持 {
         border-left-color: #ffb04c;
