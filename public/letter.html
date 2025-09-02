@@ -6,13 +6,17 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>投書</title>
     <meta name="robots" content="noindex" />
-    <!-- 必要なら外してOK -->
     <style>
       :root {
         --pink: #ff8d8d;
+        --radius: 14px;
+      }
+      * {
+        box-sizing: border-box;
       }
       body {
-        font-family: "Yu Gothic", sans-serif;
+        font-family: "Yu Gothic", system-ui, -apple-system, Segoe UI, Roboto,
+          Helvetica, Arial, sans-serif;
         background: #fafafa;
         margin: 0;
         padding: 20px;
@@ -22,9 +26,16 @@
         max-width: 760px;
         margin: 0 auto;
       }
+      .top {
+        margin: 10px 0 16px;
+      }
+      a {
+        color: var(--pink);
+        text-decoration: none;
+      }
       .card {
         background: #fff;
-        border-radius: 14px;
+        border-radius: var(--radius);
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
         padding: 18px;
       }
@@ -38,56 +49,88 @@
       }
       .badge {
         display: inline-block;
-        background: #ffe2e2;
-        color: #c95e5e;
         border-radius: 9999px;
-        padding: 0.15rem 0.6rem;
-        font-weight: 700;
+        padding: 0.18rem 0.66rem;
+        font-weight: 800;
+        font-size: 0.8rem;
       }
+      /* バッジ色（保持=保留表示）*/
+      .badge.keep {
+        background: #fff2d6;
+        color: #a06000;
+      }
+      .badge.progress {
+        background: #e7f0ff;
+        color: #3a57b7;
+      }
+      .badge.done {
+        background: #e7f7ee;
+        color: #2e7d32;
+      }
+      .badge.reject {
+        background: #ffe7e7;
+        color: #c62828;
+      }
+
       .content {
         white-space: pre-wrap;
-        font-size: 1.05rem;
+        font-size: 1.06rem;
       }
+
       .actions {
         margin-top: 14px;
         display: flex;
-        gap: 8px;
+        gap: 10px;
+        flex-wrap: wrap;
       }
       .btn {
         border: none;
-        border-radius: 8px;
-        padding: 0.5rem 0.9rem;
+        border-radius: 10px;
+        padding: 0.56rem 1rem;
         color: #fff;
-        font-weight: 700;
+        font-weight: 800;
         cursor: pointer;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+        transition: 0.15s transform ease, 0.15s filter ease, 0.15s opacity ease;
       }
-      .btn-aDone {
-        background: #4caf50;
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        filter: saturate(0.6);
       }
-      .btn-aReject {
-        background: #f44336;
+      .btn:hover {
+        transform: translateY(-1px);
       }
-      a {
-        color: var(--pink);
-        text-decoration: none;
+      #aDone {
+        background: linear-gradient(135deg, #43b36b, #2e7d32);
       }
-      .top {
-        margin: 10px 0 16px;
+      #aProgress {
+        background: linear-gradient(135deg, #6a8dff, #7a5cff);
+      }
+      #aHold {
+        background: linear-gradient(135deg, #ffb659, #ff9800);
+      }
+      #aReject {
+        background: linear-gradient(135deg, #ff6a6a, #e53935);
       }
     </style>
   </head>
   <body>
     <div class="wrap">
       <div id="ownerNav" class="top" hidden>
-        <a href="/owner/list">◀ 一覧へ</a>
+        <a href="/owner/list">一覧へ戻る</a>
       </div>
+
       <div class="card">
         <div class="meta">
-          <span id="badge" class="badge">…</span>
+          <span id="badge" class="badge keep">保留</span>
           <span id="owner"></span>
           <span id="time" style="margin-left: auto"></span>
         </div>
+
         <div id="content" class="content">読み込み中…</div>
+
+        <!-- 本人 & 「保持/進行中」時のみ表示 -->
         <div id="ownerActions" class="actions" style="display: none">
           <button id="aDone" class="btn">完了</button>
           <button id="aProgress" class="btn">進行中</button>
@@ -101,15 +144,23 @@
       const $ = (id) => document.getElementById(id);
       const qs = new URLSearchParams(location.search);
       const id = Number(qs.get("id") || 0);
+
       let me = null;
       let letter = null;
+      let updating = false;
 
       const labelFor = (s) => (s === "保持" ? "保留" : s);
+      const badgeClassFor = (s) => {
+        if (s === "保持") return "keep";
+        if (s === "進行中") return "progress";
+        if (s === "完了") return "done";
+        if (s === "棄却") return "reject";
+        return "keep";
+      };
 
       async function getMe() {
         const r = await fetch("/api/me");
-        if (r.ok) return r.json();
-        return null; // 未ログインでもOK（公開ページのため）
+        return r.ok ? r.json() : null;
       }
 
       async function fetchLetter() {
@@ -121,39 +172,49 @@
         return r.json();
       }
 
+      function setBadge(status) {
+        const b = $("badge");
+        b.textContent = labelFor(status);
+        b.className = `badge ${badgeClassFor(status)}`;
+      }
+
       async function refresh() {
         letter = await fetchLetter();
         me = await getMe();
 
         if (!letter) return;
 
-        $("badge").textContent = `[${labelFor(letter.status)}]`;
+        setBadge(letter.status);
         $("owner").textContent = `@${letter.owner_id}`;
         $("time").textContent = new Date(
           letter.updated_at || letter.created_at
         ).toLocaleString();
         $("content").textContent = letter.content;
 
-        // オーナー本人かつ 保持 のときだけ操作ボタン表示
-        const canOperate =
+        const isOwner =
           !!me && (me.ownerId === letter.owner_id || me.id === letter.owner_id);
-        $("ownerActions").style.display =
-          canOperate && (letter.status === "保持" || letter.status === "進行中")
-            ? "flex"
-            : "none";
-        if (canOperate) {
-          $("ownerNav").hidden = false;
-        } else {
-          $("ownerNav").hidden = true; // 明示
-        }
+        const canOperate =
+          isOwner && (letter.status === "保持" || letter.status === "進行中");
+
+        $("ownerActions").style.display = canOperate ? "flex" : "none";
+        $("ownerNav").hidden = !isOwner;
       }
 
       async function update(status) {
-        // me.ownerId を優先
+        if (updating) return;
+        updating = true;
+        // 本人確認
         const ownerId = (me && (me.ownerId || me.id)) || "";
         if (!ownerId) {
           alert("ログインが必要です");
+          updating = false;
           return;
+        }
+
+        // ボタン全体を一時無効化
+        for (const id of ["aDone", "aProgress", "aHold", "aReject"]) {
+          const el = $(id);
+          if (el) el.disabled = true;
         }
 
         const r = await fetch(
@@ -164,11 +225,18 @@
             body: JSON.stringify({ status }),
           }
         );
+
         if (!r.ok) {
           alert("更新に失敗しました");
-          return;
+        } else {
+          await refresh();
         }
-        refresh();
+
+        for (const id of ["aDone", "aProgress", "aHold", "aReject"]) {
+          const el = $(id);
+          if (el) el.disabled = false;
+        }
+        updating = false;
       }
 
       $("aDone").onclick = () => update("完了");
