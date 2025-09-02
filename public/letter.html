@@ -156,7 +156,7 @@
   <body>
     <div class="wrap">
       <div id="ownerNav" class="top" hidden>
-        <a href="/owner/list">一覧へ戻る</a>
+        <a id="backList" href="#">◀ 一覧へ戻る</a>
       </div>
 
       <div class="card">
@@ -242,7 +242,11 @@
           isOwner && (letter.status === "保持" || letter.status === "進行中");
 
         $("ownerActions").style.display = canOperate ? "flex" : "none";
-        $("ownerNav").hidden = !isOwner;
+        const listPath = "/owner/list"; // もし list.html を /list.html で配信なら '/list.html' に変更
+        $("backList").href = `${listPath}?o=${encodeURIComponent(
+          letter.owner_id
+        )}`;
+        $("ownerNav").hidden = false; // ← 誰でも表示する
       }
 
       async function update(status) {
