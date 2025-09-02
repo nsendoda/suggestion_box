@@ -186,7 +186,7 @@
         const a = document.createElement("a");
         a.href = `/owner/list?o=${encodeURIComponent(info.id)}`;
         a.textContent = `@${info.displayName || info.id}`;
-        a.title = "この人の投書一覧を見る";
+        a.title = "この人が引いた投書一覧を見る";
         label.appendChild(a);
         label.append(" さん");
         return info;

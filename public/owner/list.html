@@ -26,6 +26,11 @@
         align-items: center;
         font-size: 0.9rem;
       }
+      .right {
+        display: flex;
+        align-items: center;
+        gap: 14px; /* 右側の並びの余白 */
+      }
       .back {
         color: #ff8d8d;
         font-weight: bold;
@@ -97,12 +102,18 @@
     <h1 id="title">投書一覧</h1>
 
     <div class="toolbar">
+      <!-- 左：戻る（本人のみ表示） -->
       <a id="backLink" href="/owner.html" class="back"
         >◀︎ ダッシュボードへ戻る</a
       >
-      <label id="inboxWrap" class="inbox-option" style="display: none">
-        <input type="checkbox" id="chkInbox" /> inbox も表示
-      </label>
+
+      <!-- 右：投書する（常に表示）＋ inbox（noshi本人のみ） -->
+      <div class="right">
+        <a id="writeLink" class="back" href="#">投書する</a>
+        <label id="inboxWrap" class="inbox-option" style="display: none">
+          <input type="checkbox" id="chkInbox" /> inbox も表示
+        </label>
+      </div>
     </div>
 
     <ul id="list"></ul>
@@ -133,8 +144,12 @@
           $("list").innerHTML =
             "<li>閲覧するユーザーが指定されていません。</li>";
           $("backLink").style.display = "none";
+          $("writeLink").style.display = "none";
           return;
         }
+
+        // 「投書する」リンク（常に表示）
+        $("writeLink").href = `/box.html?o=${encodeURIComponent(targetOwner)}`;
 
         // 表示名（なければ @id）
         let display = "@" + targetOwner;
@@ -147,8 +162,8 @@
             if (p.displayName) display = p.displayName;
           }
         } catch {}
-        $("title").textContent = `${display} さんの投書一覧`;
-        document.title = `${display}さんの投書一覧`;
+        $("title").textContent = `${display} さんが引いた投書一覧`;
+        document.title = `${display}さんが引いた投書一覧`;
 
         // 本人か？
         const isSelf = !!meId && meId === targetOwner;
