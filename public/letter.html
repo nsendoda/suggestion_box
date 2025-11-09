@@ -199,6 +199,17 @@
           <button id="aHold" class="btn btn-aHold">保留</button>
           <button id="aReject" class="btn btn-aReject">棄却</button>
         </div>
+
+        <!-- ツイートボタン（ステータス変更後に表示） -->
+        <div id="tweetSection" class="actions" style="display: none; margin-top: 12px">
+          <a
+            id="btnTweet"
+            class="btn"
+            target="_blank"
+            rel="noopener"
+            style="background: #1da1f2; text-decoration: none; display: inline-block"
+          >X で共有</a>
+        </div>
       </div>
     </div>
 
@@ -309,6 +320,8 @@
           alert("更新に失敗しました");
         } else {
           await refresh();
+          // ステータス変更後にツイートボタンを表示
+          showTweetButton(status);
         }
 
         for (const id of ["aDone", "aProgress", "aHold", "aReject"]) {
@@ -316,6 +329,33 @@
           if (el) el.disabled = false;
         }
         updating = false;
+      }
+
+      function showTweetButton(status) {
+        if (!letter) return;
+
+        // ツイートメッセージを生成
+        let message = "";
+        const progress = letter.progress ?? 0;
+        const preview = [...letter.content].slice(0, 20).join("") + ([...letter.content].length > 20 ? "…" : "");
+
+        if (status === "完了") {
+          message = `投書「${preview}」を完了しました！✨\n進捗: 100%`;
+        } else if (status === "棄却") {
+          message = `投書「${preview}」を棄却しました`;
+        } else if (status === "進行中") {
+          message = `投書「${preview}」に取り組んでいます\n進捗: ${progress}%`;
+        } else {
+          // 保留の場合はツイートボタンを表示しない
+          $("tweetSection").style.display = "none";
+          return;
+        }
+
+        const shareUrl = `${location.origin}/letter.html?id=${id}`;
+        const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}&url=${encodeURIComponent(shareUrl)}`;
+
+        $("btnTweet").href = tweetUrl;
+        $("tweetSection").style.display = "flex";
       }
 
       $("aDone").onclick = () => update("完了");
@@ -341,6 +381,15 @@
         if (!r.ok) {
           alert("進捗の更新に失敗しました");
           await refresh(); // エラー時は元に戻す
+        } else {
+          // 進捗更新後、letterオブジェクトのprogressも更新
+          if (letter) {
+            letter.progress = progress;
+          }
+          // ツイートボタンが表示されている場合、メッセージを更新
+          if ($("tweetSection").style.display !== "none") {
+            showTweetButton("進行中");
+          }
         }
       };
 
