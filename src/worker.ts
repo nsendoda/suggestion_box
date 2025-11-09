@@ -191,7 +191,7 @@ app.post("/api/owners/:ownerId/draw", requireAuth, async (c) => {
   const { ownerId } = c.req.param();
   const res = assertOwnerMatch(c, ownerId);
   if (res) return res;
-  // keep_limit は owners.keep_limit を使う
+  // keep_limit は owners.keep_limit を使う（進行中は上限に含めない）
   const kept = await c.env.DB.prepare(
     'SELECT COUNT(*) AS cnt FROM letters WHERE owner_id=? AND status="保持"'
   )

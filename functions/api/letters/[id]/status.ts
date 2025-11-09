@@ -27,7 +27,7 @@ export const onRequestPost: PagesFunction<Env> = async ({
     const kept =
       (
         await env.DB.prepare(
-          'SELECT count(*) AS cnt FROM letters WHERE owner_id=? AND status IN ("保持","進行中") AND id<>?'
+          'SELECT count(*) AS cnt FROM letters WHERE owner_id=? AND status="保持" AND id<>?'
         )
           .bind(ownerId, id)
           .first<{ cnt: number }>()

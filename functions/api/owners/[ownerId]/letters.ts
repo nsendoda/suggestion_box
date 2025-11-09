@@ -17,7 +17,7 @@ export const onRequestGet: PagesFunction<Env> = async ({
       u.searchParams.get("includeInbox") === "1";
 
     let sql =
-      "SELECT id, content, status, created_at, updated_at FROM letters WHERE owner_id=?";
+      "SELECT id, content, status, progress, created_at, updated_at FROM letters WHERE owner_id=?";
     if (!showInbox) sql += ' AND status != "inbox"';
     sql += " ORDER BY updated_at DESC";
 
@@ -27,6 +27,7 @@ export const onRequestGet: PagesFunction<Env> = async ({
         id: number;
         content: string;
         status: string;
+        progress: number | null;
         created_at: string;
         updated_at: string;
       }>();
@@ -39,7 +40,7 @@ export const onRequestGet: PagesFunction<Env> = async ({
       .first<{ lim: number }>();
 
     const keptRow = await env.DB.prepare(
-      'SELECT COUNT(*) AS cnt FROM letters WHERE owner_id=? AND status IN ("保持","進行中")'
+      'SELECT COUNT(*) AS cnt FROM letters WHERE owner_id=? AND status="保持"'
     )
       .bind(ownerId)
       .first<{ cnt: number }>();
