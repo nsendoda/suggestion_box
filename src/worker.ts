@@ -164,7 +164,7 @@ app.post(
   zValidator(
     "json",
     z.object({
-      content: z.string().max(200),
+      content: z.string().max(300),
     })
   ),
   async (c) => {

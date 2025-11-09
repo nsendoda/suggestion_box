@@ -72,8 +72,8 @@ export const onRequestPost: PagesFunction<Env> = async ({
     let content = (body?.content ?? "").toString().trim();
 
     if (!content) return json({ error: "content required" }, 400);
-    if ([...content].length > 200)
-      return json({ error: "too long (<=200 chars)" }, 400);
+    if ([...content].length > 300)
+      return json({ error: "too long (<=300 chars)" }, 400);
 
     // オーナーが存在しない箱への送信を拒否
     const exists = await env.DB.prepare("SELECT 1 FROM owners WHERE id=?")
@@ -91,7 +91,7 @@ export const onRequestPost: PagesFunction<Env> = async ({
 
     return json({ ok: true });
   } catch (e: any) {
-    // 200 文字制約など DB エラーもここに落ちる
+    // 300 文字制約など DB エラーもここに落ちる
     return json(
       { error: "create failed", detail: String(e?.message || e) },
       500
