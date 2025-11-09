@@ -202,7 +202,7 @@ app.post("/api/owners/:ownerId/draw", requireAuth, async (c) => {
   )
     .bind(ownerId)
     .first<{ lim: number }>();
-  const lim = limitRow?.lim ?? 3;
+  const lim = limitRow?.lim ?? 5;
   if ((kept?.cnt ?? 0) >= lim)
     return c.json({ error: `Limit reached (${lim})` }, 409);
   // …以降は既存と同じ

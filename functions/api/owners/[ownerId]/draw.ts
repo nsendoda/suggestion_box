@@ -1,6 +1,6 @@
 // functions/api/owners/[ownerId]/draw.ts
 type Env = { DB: D1Database };
-const LIMIT = 3;
+const LIMIT = 5;
 
 export const onRequestPost: PagesFunction<Env> = async ({ env, params }) => {
   try {

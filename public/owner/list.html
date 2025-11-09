@@ -41,6 +41,21 @@
       .inbox-option {
         color: #666;
       }
+      .keep-status {
+        color: #666;
+        font-weight: bold;
+        padding: 0.4rem 0.8rem;
+        background: #f0f0f0;
+        border-radius: 6px;
+        font-size: 0.85rem;
+      }
+      .keep-status .current {
+        color: #ff8d8d;
+        font-size: 1.1em;
+      }
+      .keep-status .limit {
+        color: #999;
+      }
       ul {
         list-style: none;
         padding: 0;
@@ -117,6 +132,11 @@
       <a id="backLink" href="/owner.html" class="back"
         >◀︎ ダッシュボードへ戻る</a
       >
+
+      <!-- 中央：保持数表示（本人のみ） -->
+      <span id="keepStatus" class="keep-status" style="display: none">
+        保持中: <span class="current" id="currentKeep">-</span> / <span class="limit" id="keepLimit">-</span>
+      </span>
 
       <!-- 右：投書する（常に表示）＋ inbox（noshi本人のみ） -->
       <div class="right">
@@ -221,6 +241,14 @@
         }
         const data = await r.json();
         const rows = Array.isArray(data) ? data : data.results;
+
+        // 保持数と上限を表示（本人の場合のみ）
+        const isSelf = !!meId && meId === targetOwner;
+        if (isSelf && data.keepLimit !== undefined && data.currentKeep !== undefined) {
+          $("keepStatus").style.display = "inline";
+          $("currentKeep").textContent = data.currentKeep;
+          $("keepLimit").textContent = data.keepLimit;
+        }
 
         const list = $("list");
         list.innerHTML = "";

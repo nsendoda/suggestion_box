@@ -22,7 +22,7 @@ export const onRequestPost: PagesFunction<Env> = async ({
     )
       .bind(ownerId)
       .first<{ lim: number }>();
-    const lim = limitRow?.lim ?? 3;
+    const lim = limitRow?.lim ?? 5;
 
     const kept =
       (

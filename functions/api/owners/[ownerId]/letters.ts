@@ -31,7 +31,27 @@ export const onRequestGet: PagesFunction<Env> = async ({
         updated_at: string;
       }>();
 
-    return json(rows.results);
+    // 保持上限と現在の保持数を取得
+    const limitRow = await env.DB.prepare(
+      "SELECT keep_limit AS lim FROM owners WHERE id=?"
+    )
+      .bind(ownerId)
+      .first<{ lim: number }>();
+
+    const keptRow = await env.DB.prepare(
+      'SELECT COUNT(*) AS cnt FROM letters WHERE owner_id=? AND status IN ("保持","進行中")'
+    )
+      .bind(ownerId)
+      .first<{ cnt: number }>();
+
+    const keepLimit = limitRow?.lim ?? 5;
+    const currentKeep = keptRow?.cnt ?? 0;
+
+    return json({
+      results: rows.results,
+      keepLimit,
+      currentKeep,
+    });
   } catch (e: any) {
     return json({ error: "list failed", detail: String(e?.message || e) }, 500);
   }

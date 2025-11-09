@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS owners (
   display_name TEXT,
   pw_salt      TEXT NOT NULL,
   pw_hash      TEXT NOT NULL,
-  keep_limit   INTEGER NOT NULL DEFAULT 3, -- 保持上限（デフォルト3）
+  keep_limit   INTEGER NOT NULL DEFAULT 5, -- 保持上限（デフォルト5）
   is_admin     INTEGER NOT NULL DEFAULT 0, -- 最初の1人を管理者に
   created_at   TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
